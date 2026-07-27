@@ -1,0 +1,1307 @@
+{
+  "usuarios": {
+    "columns": {
+      "id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "cpf": {
+        "type": "VARCHAR(11)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "email": {
+        "type": "VARCHAR(100)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "nome": {
+        "type": "VARCHAR(150)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "senha": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "source_file": "2026-04-13-203354_CreateUsers.php"
+  },
+  "papeis": {
+    "columns": {
+      "id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "nome": {
+        "type": "VARCHAR(50)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "source_file": "2026-04-13-210117_CreatePapeis.php"
+  },
+  "usuarios_papeis": {
+    "columns": {
+      "id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "usuario_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "papel_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "usuario_id",
+        "referenced_table": "usuarios",
+        "referenced_column": "id"
+      },
+      {
+        "column": "papel_id",
+        "referenced_table": "papeis",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-04-15-100000_CreateUsuariosPapeis.php"
+  },
+  "tokens_mudanca_senha": {
+    "columns": {
+      "id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "usuario_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "token_hash": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "expira_em": {
+        "type": "DATETIME",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "usado_em": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "usuario_id",
+        "referenced_table": "usuarios",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-04-15-100100_CreateTokensMudancaSenha.php"
+  },
+  "verificacoes_email": {
+    "columns": {
+      "id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "usuario_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "token_hash": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "expira_em": {
+        "type": "DATETIME",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "verificado_em": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "usuario_id",
+        "referenced_table": "usuarios",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-04-15-100200_CreateVerificacoesEmail.php"
+  },
+  "sessoes": {
+    "columns": {
+      "id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "usuario_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "token_sessao": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "ip": {
+        "type": "VARCHAR(45)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "user_agent": {
+        "type": "VARCHAR(255)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "ultimo_acesso_em": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "expira_em": {
+        "type": "DATETIME",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "revogada_em": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "usuario_id",
+        "referenced_table": "usuarios",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-04-15-100300_CreateSessoes.php"
+  },
+  "faculdades": {
+    "columns": {
+      "id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "nome": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "source_file": "2026-05-08-100000_CreateFaculdades.php"
+  },
+  "materias": {
+    "columns": {
+      "id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "faculdade_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "codigo": {
+        "type": "VARCHAR(20)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "nome": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "local_sala": {
+        "type": "VARCHAR(50)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "turma": {
+        "type": "VARCHAR(10)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "status": {
+        "type": "ENUM(['MATRICULADO)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "data_inicio": {
+        "type": "DATE",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "data_fim": {
+        "type": "DATE",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "faculdade_id",
+        "referenced_table": "faculdades",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-05-08-100100_CreateMaterias.php"
+  },
+  "horarios_materias": {
+    "columns": {
+      "id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "materia_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "dia_semana": {
+        "type": "TINYINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "horario_inicio": {
+        "type": "TIME",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "horario_fim": {
+        "type": "TIME",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "materia_id",
+        "referenced_table": "materias",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-05-08-100200_CreateHorariosMaterias.php"
+  },
+  "cursos": {
+    "columns": {
+      "id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "usuario_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "faculdade_id": {
+        "type": "BIGINT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "nome_curso": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "descricao_apresentacao": {
+        "type": "TEXT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "ementa": {
+        "type": "TEXT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "curso_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "codigo": {
+        "type": "VARCHAR(20)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "nome": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "periodo": {
+        "type": "SMALLINT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "carga_horaria": {
+        "type": "SMALLINT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "disciplina_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "disciplina_dependencia_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "tipo": {
+        "type": "ENUM(['PRE)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "status": {
+        "type": "ENUM(['CONCLUIDA)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "passou": {
+        "type": "BOOLEAN",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "dificuldade": {
+        "type": "TINYINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "esforco": {
+        "type": "TINYINT",
+        "nullable": false,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "usuario_id",
+        "referenced_table": "usuarios",
+        "referenced_column": "id"
+      },
+      {
+        "column": "faculdade_id",
+        "referenced_table": "faculdades",
+        "referenced_column": "id"
+      },
+      {
+        "column": "curso_id",
+        "referenced_table": "cursos",
+        "referenced_column": "id"
+      },
+      {
+        "column": "disciplina_id",
+        "referenced_table": "curriculo_disciplinas",
+        "referenced_column": "id"
+      },
+      {
+        "column": "disciplina_dependencia_id",
+        "referenced_table": "curriculo_disciplinas",
+        "referenced_column": "id"
+      },
+      {
+        "column": "usuario_id",
+        "referenced_table": "usuarios",
+        "referenced_column": "id"
+      },
+      {
+        "column": "disciplina_id",
+        "referenced_table": "curriculo_disciplinas",
+        "referenced_column": "id"
+      },
+      {
+        "column": "usuario_id",
+        "referenced_table": "usuarios",
+        "referenced_column": "id"
+      },
+      {
+        "column": "disciplina_id",
+        "referenced_table": "curriculo_disciplinas",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-05-25-180000_CreateSprint4EstruturaCurricular.php"
+  },
+  "ofertas_disciplinas": {
+    "columns": {
+      "codigo_externo": {
+        "type": "VARCHAR(30)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "plano_curso": {
+        "type": "TEXT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "curso_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "disciplina_id": {
+        "type": "BIGINT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "turma": {
+        "type": "VARCHAR(10)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "ano_periodo": {
+        "type": "VARCHAR(20)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "docentes": {
+        "type": "TEXT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "carga_horaria": {
+        "type": "SMALLINT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "tipo": {
+        "type": "VARCHAR(30)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "modalidade": {
+        "type": "VARCHAR(50)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "situacao": {
+        "type": "VARCHAR(30)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "horario_bruto": {
+        "type": "TEXT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "local": {
+        "type": "VARCHAR(255)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "matriculados": {
+        "type": "SMALLINT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "capacidade": {
+        "type": "SMALLINT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "data_inicio": {
+        "type": "DATE",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "data_fim": {
+        "type": "DATE",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "origem_relatorio": {
+        "type": "VARCHAR(40)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "oferta_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "dia_semana": {
+        "type": "TINYINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "horario_inicio": {
+        "type": "TIME",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "horario_fim": {
+        "type": "TIME",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "horario_sigaa": {
+        "type": "VARCHAR(20)",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "curso_id",
+        "referenced_table": "cursos",
+        "referenced_column": "id"
+      },
+      {
+        "column": "disciplina_id",
+        "referenced_table": "curriculo_disciplinas",
+        "referenced_column": "id"
+      },
+      {
+        "column": "oferta_id",
+        "referenced_table": "ofertas_disciplinas",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-05-28-120000_AddCurriculoImportacaoEstrutura.php"
+  },
+  "curriculo_disciplinas_relacoes": {
+    "columns": {
+      "id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "curso_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "disciplina_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "disciplina_relacionada_id": {
+        "type": "BIGINT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "codigo_relacionado": {
+        "type": "VARCHAR(30)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "nome_relacionado": {
+        "type": "VARCHAR(255)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "tipo_relacao": {
+        "type": "VARCHAR(40)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "similaridade": {
+        "type": "DECIMAL(5)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "observacao": {
+        "type": "TEXT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "usuario_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "oferta_id": {
+        "type": "BIGINT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "codigo_externo": {
+        "type": "VARCHAR(30)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "nome_original": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "turma": {
+        "type": "VARCHAR(10)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "ano_periodo": {
+        "type": "VARCHAR(20)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "situacao_sigaa": {
+        "type": "VARCHAR(20)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "status": {
+        "type": "VARCHAR(20)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "passou": {
+        "type": "BOOLEAN",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "carga_horaria": {
+        "type": "SMALLINT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "frequencia": {
+        "type": "DECIMAL(5)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "media_final": {
+        "type": "DECIMAL(5)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "conceito": {
+        "type": "VARCHAR(10)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "data_inicio": {
+        "type": "DATE",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "data_fim": {
+        "type": "DATE",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "origem": {
+        "type": "VARCHAR(40)",
+        "nullable": false,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "curso_id",
+        "referenced_table": "cursos",
+        "referenced_column": "id"
+      },
+      {
+        "column": "disciplina_id",
+        "referenced_table": "curriculo_disciplinas",
+        "referenced_column": "id"
+      },
+      {
+        "column": "disciplina_relacionada_id",
+        "referenced_table": "curriculo_disciplinas",
+        "referenced_column": "id"
+      },
+      {
+        "column": "usuario_id",
+        "referenced_table": "usuarios",
+        "referenced_column": "id"
+      },
+      {
+        "column": "curso_id",
+        "referenced_table": "cursos",
+        "referenced_column": "id"
+      },
+      {
+        "column": "disciplina_id",
+        "referenced_table": "curriculo_disciplinas",
+        "referenced_column": "id"
+      },
+      {
+        "column": "oferta_id",
+        "referenced_table": "ofertas_disciplinas",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-05-29-151000_AddHistoricoEscolarImportacaoEstrutura.php"
+  },
+  "usuario_academicos": {
+    "columns": {
+      "id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "usuario_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "faculdade_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "curso_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "usuario_id",
+        "referenced_table": "usuarios",
+        "referenced_column": "id"
+      },
+      {
+        "column": "faculdade_id",
+        "referenced_table": "faculdades",
+        "referenced_column": "id"
+      },
+      {
+        "column": "curso_id",
+        "referenced_table": "cursos",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-05-29-210000_CreateUsuarioAcademicos.php"
+  },
+  "convites_coordenadores": {
+    "columns": {
+      "id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "email": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "token": {
+        "type": "VARCHAR(64)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "expira_em": {
+        "type": "DATETIME",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "usado_em": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "source_file": "2026-06-02-150000_CreateConvitesCoordenadores.php"
+  },
+  "materia_arquivos": {
+    "columns": {
+      "id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "materia_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "usuario_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "arquivo_id": {
+        "type": "VARCHAR(32)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "bucket": {
+        "type": "VARCHAR(100)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "caminho": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "nome_original": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "mime_type": {
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "extensao": {
+        "type": "VARCHAR(20)",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "tamanho_bytes": {
+        "type": "BIGINT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "tipo_contribuicao": {
+        "type": "ENUM(['lista_exercicios)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "parte_disciplina": {
+        "type": "ENUM(['P1)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "ano": {
+        "type": "SMALLINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "periodo": {
+        "type": "TINYINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "comentario": {
+        "type": "TEXT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "deleted_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "materia_id",
+        "referenced_table": "materias_matriculadas",
+        "referenced_column": "id"
+      },
+      {
+        "column": "usuario_id",
+        "referenced_table": "usuarios",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-06-11-230000_CreateMateriaArquivos.php"
+  },
+  "materia_arquivos_votos": {
+    "columns": {
+      "likes": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "dislikes": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "arquivo_id": {
+        "type": "BIGINT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "usuario_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "valor": {
+        "type": "TINYINT(1)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [
+      {
+        "column": "arquivo_id",
+        "referenced_table": "materia_arquivos",
+        "referenced_column": "id"
+      },
+      {
+        "column": "usuario_id",
+        "referenced_table": "usuarios",
+        "referenced_column": "id"
+      }
+    ],
+    "source_file": "2026-06-18-141000_CreateMateriaArquivosVotos.php"
+  },
+  "curriculo_import_jobs": {
+    "columns": {
+      "id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": true
+      },
+      "curso_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "usuario_id": {
+        "type": "INT",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "tipo": {
+        "type": "VARCHAR(50)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "status": {
+        "type": "VARCHAR(50)",
+        "nullable": false,
+        "auto_increment": false
+      },
+      "payload": {
+        "type": "JSON",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "result": {
+        "type": "JSON",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "error_message": {
+        "type": "TEXT",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "created_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      },
+      "updated_at": {
+        "type": "DATETIME",
+        "nullable": true,
+        "auto_increment": false
+      }
+    },
+    "primary_keys": [
+      "id"
+    ],
+    "foreign_keys": [],
+    "source_file": "2026-06-22-205644_CreateCurriculoImportJobs.php"
+  }
+}
