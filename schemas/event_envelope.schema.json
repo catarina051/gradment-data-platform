@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gradment.org/schemas/event_envelope.schema.json",
+  "title": "GradMent Event Envelope Schema",
+  "description": "Standardized envelope wrapper for all events emitted into the GradMent Data Platform",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_name",
+    "schema_version",
+    "user_key",
+    "session_id",
+    "event_ts",
+    "platform",
+    "app_version",
+    "payload"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique UUID v4 event identifier for client-side deduplication and idempotency."
+    },
+    "event_name": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Snake_case event identifier formatted as <object>_<action> (e.g. discipline_rated)."
+    },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version integer for the event payload schema, starting at 1."
+    },
+    "user_key": {
+      "type": ["string", "null"],
+      "description": "Salted SHA-256 hash of the user_id, or null if unauthenticated."
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID v4 session identifier for session boundary grouping (fct_sessions)."
+    },
+    "event_ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when the event occurred."
+    },
+    "platform": {
+      "type": "string",
+      "enum": ["web", "mobile_ios", "mobile_android"],
+      "description": "Client platform emitting the event."
+    },
+    "app_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version of the GradMent app."
+    },
+    "payload": {
+      "type": "object",
+      "description": "Event-specific typed key-value payload object."
+    }
+  },
+  "additionalProperties": false
+}

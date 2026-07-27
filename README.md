@@ -55,7 +55,7 @@ This platform operates on a **Two-Lane Principle**:
 
 - [x] **Phase -1: Product Discovery** ([docs/product_discovery.md](docs/product_discovery.md))
 - [x] **Phase 0: Database Discovery** ([docs/schema_inventory.md](docs/schema_inventory.md) & [docs/erd.md](docs/erd.md))
-- [ ] **Phase 1: Event Collection Architecture**
+- [x] **Phase 1: Event Collection Architecture** ([events_catalog.yml](events_catalog.yml) & [schemas/event_envelope.schema.json](schemas/event_envelope.schema.json))
 - [ ] **Phase 2: Backend Instrumentation**
 - [ ] **Phase 3: Analytical Database Design**
 - [ ] **Phase 4: ETL/ELT Pipeline**

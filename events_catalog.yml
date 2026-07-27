@@ -1,0 +1,319 @@
+# GradMent Data Platform — Canonical Event Catalog
+# Machine-readable event contract between GradMent application and Data Platform
+
+version: "1.0.0"
+envelope_schema: "schemas/event_envelope.schema.json"
+
+events:
+  # =========================================================================
+  # 1. AUTHENTICATION & REGISTRATION
+  # =========================================================================
+  - event_name: user_registered
+    category: Authentication & Registration
+    priority: Critical
+    schema_version: 1
+    description: Fired immediately after a new user account is successfully created and persisted.
+    trigger: Successful completion of registration controller action.
+    metrics:
+      - New Users
+      - Total Users
+      - Registration Rate
+    payload:
+      university_id: { type: integer, nullable: false, description: "ID of the student's university (faculdade_id)" }
+      course_id: { type: integer, nullable: true, description: "ID of the student's degree course (curso_id)" }
+      registration_source: { type: string, enum: ["web", "mobile"], description: "Client registration channel" }
+      referral_code: { type: string, nullable: true, description: "Optional referral tracking code" }
+
+  - event_name: login_succeeded
+    category: Authentication & Registration
+    priority: Critical
+    schema_version: 1
+    description: Fired when a user successfully authenticates.
+    trigger: Authentication controller returns success token.
+    metrics:
+      - DAU
+      - WAU
+      - MAU
+      - Login Failure Rate
+    payload:
+      method: { type: string, enum: ["password", "sso"], description: "Authentication mechanism used" }
+
+  - event_name: login_failed
+    category: Authentication & Registration
+    priority: Critical
+    schema_version: 1
+    description: Fired on an unsuccessful login attempt.
+    trigger: Authentication controller rejects user credentials.
+    metrics:
+      - Login Failures
+      - API Error Rate
+    payload:
+      method: { type: string, enum: ["password", "sso"], description: "Authentication mechanism attempted" }
+      failure_reason: { type: string, description: "Reason for authentication rejection (e.g. INVALID_CREDENTIALS)" }
+
+  - event_name: user_logged_out
+    category: Authentication & Registration
+    priority: Medium
+    schema_version: 1
+    description: Fired when a user explicitly logs out of the session.
+    trigger: User clicks logout or revokes session token.
+    metrics:
+      - Session Duration
+    payload:
+      session_duration_seconds: { type: integer, description: "Total active session duration prior to logout" }
+
+  # =========================================================================
+  # 2. NAVIGATION
+  # =========================================================================
+  - event_name: screen_viewed
+    category: Navigation
+    priority: High
+    schema_version: 1
+    description: Fired on every route/screen transition that represents a meaningful navigation.
+    trigger: Router navigation completes on frontend.
+    metrics:
+      - Feature Adoption
+      - Screen Abandonment
+      - Navigation Flow
+    payload:
+      screen_name: { type: string, description: "Identifier of the rendered screen (e.g. course_planner)" }
+      feature_key: { type: string, description: "Maps to dim_features module (e.g. planejamento, avaliacoes)" }
+      referrer_screen: { type: string, nullable: true, description: "Previous screen name" }
+
+  # =========================================================================
+  # 3. SEARCH
+  # =========================================================================
+  - event_name: search_performed
+    category: Search
+    priority: High
+    schema_version: 1
+    description: Fired when a search query is submitted by the student.
+    trigger: Search submit action executed (debounced).
+    metrics:
+      - Searches
+      - Empty Search Rate
+      - Search Success Rate
+    payload:
+      query_length: { type: integer, description: "Character length of the query (raw text suppressed for privacy)" }
+      result_count: { type: integer, description: "Number of search results returned" }
+      search_scope: { type: string, enum: ["disciplines", "professors", "materials"], description: "Search domain scope" }
+
+  - event_name: search_result_opened
+    category: Search
+    priority: High
+    schema_version: 1
+    description: Fired when a student clicks/opens a specific search result.
+    trigger: User taps or clicks a item card in search results.
+    metrics:
+      - Search Success Rate
+    payload:
+      search_scope: { type: string, enum: ["disciplines", "professors", "materials"], description: "Domain of opened item" }
+      result_position: { type: integer, description: "1-indexed position rank of opened result card" }
+
+  # =========================================================================
+  # 4. RATINGS (CONTENT GENERATION)
+  # =========================================================================
+  - event_name: discipline_rated
+    category: Ratings
+    priority: Critical
+    schema_version: 1
+    description: Fired when a student submits a new rating for a discipline/professor offering.
+    trigger: Rating controller successfully persists a new rating row in avaliacoes_disciplinas.
+    metrics:
+      - Ratings
+      - Courses Ranked
+      - Activation Rate
+    payload:
+      discipline_id: { type: integer, description: "ID of the curriculo_disciplina evaluated" }
+      professor_id: { type: integer, nullable: true, description: "ID of the professor/docente from ofertas_disciplinas" }
+      academic_period: { type: string, description: "Academic semester during which course was taken (e.g. 2026.1)" }
+      oferta_id: { type: integer, nullable: true, description: "ID of the specific course offering (ofertas_disciplinas.id)" }
+      dificuldade: { type: integer, description: "Perceived difficulty score (1 to 5)" }
+      esforco: { type: integer, description: "Perceived workload effort score (1 to 5)" }
+      passou: { type: boolean, description: "Whether the student passed the course" }
+      has_comment: { type: boolean, description: "True if user included text feedback (text itself suppressed for LGPD privacy)" }
+
+  - event_name: professor_rated
+    category: Ratings
+    priority: Critical
+    schema_version: 1
+    description: Fired when a student evaluates a professor's teaching performance.
+    trigger: Rating controller persists professor-specific evaluation.
+    metrics:
+      - Ratings
+      - Professors Ranked
+    payload:
+      professor_id: { type: integer, description: "ID of the professor evaluated (dim_professors)" }
+      discipline_id: { type: integer, description: "ID of the subject taught" }
+      academic_period: { type: string, description: "Academic semester (e.g. 2026.1)" }
+      didatica_score: { type: integer, description: "Teaching clarity score (1 to 5)" }
+
+  # =========================================================================
+  # 5. DOWNLOADS (CONTENT CONSUMPTION)
+  # =========================================================================
+  - event_name: material_downloaded
+    category: Downloads
+    priority: High
+    schema_version: 1
+    description: Fired when a student initiates a download of a study material or past exam.
+    trigger: Download endpoint returns valid file stream response.
+    metrics:
+      - Downloads
+      - Feature Adoption
+    payload:
+      material_type: { type: string, enum: ["study_material", "past_exam"], description: "Category of material" }
+      course_id: { type: integer, description: "Associated curriculo_disciplina ID" }
+      professor_id: { type: integer, nullable: true, description: "Associated professor/docente ID" }
+      academic_period: { type: string, nullable: true, description: "Semester period of the material (e.g. 2025.2)" }
+
+  # =========================================================================
+  # 6. UPLOADS (CONTENT CONTRIBUTION)
+  # =========================================================================
+  - event_name: material_uploaded
+    category: Uploads
+    priority: High
+    schema_version: 1
+    description: Fired when a student successfully uploads a study material or past exam.
+    trigger: Upload controller finishes storage and database persistence.
+    metrics:
+      - Uploads
+      - Activation Rate
+    payload:
+      material_type: { type: string, enum: ["study_material", "past_exam"], description: "Type of uploaded file" }
+      course_id: { type: integer, description: "Target curriculo_disciplina ID" }
+      file_size_kb: { type: integer, description: "File size in kilobytes" }
+      academic_period: { type: string, nullable: true, description: "Semester period of exam/material" }
+
+  - event_name: upload_failed
+    category: Uploads
+    priority: High
+    schema_version: 1
+    description: Fired when a material upload attempt fails.
+    trigger: Upload endpoint catches validation, file size limit, or storage error.
+    metrics:
+      - Upload Failures
+      - API Error Rate
+    payload:
+      material_type: { type: string, enum: ["study_material", "past_exam"], description: "Type attempted" }
+      failure_reason: { type: string, description: "Reason for failure (e.g. INVALID_FORMAT, FILE_TOO_LARGE)" }
+
+  # =========================================================================
+  # 7. PLANNING (WORKFLOW COMPLETION)
+  # =========================================================================
+  - event_name: planning_session_started
+    category: Planning
+    priority: High
+    schema_version: 1
+    description: Fired when a student opens the academic planning workflow tool.
+    trigger: Planning wizard UI initialized.
+    metrics:
+      - Feature Adoption
+      - Screen Abandonment
+    payload:
+      academic_period: { type: string, description: "Target planning semester (e.g. 2026.2)" }
+
+  - event_name: planning_session_completed
+    category: Planning
+    priority: High
+    schema_version: 1
+    description: Fired when a student successfully saves a completed semester course schedule plan.
+    trigger: Planning save action commits in backend database.
+    metrics:
+      - First Session Completion
+      - Feature Adoption
+    payload:
+      courses_planned: { type: integer, description: "Total subjects included in schedule" }
+      academic_period: { type: string, description: "Target planning semester (e.g. 2026.2)" }
+      had_conflicts_resolved: { type: boolean, description: "True if student resolved schedule time overlaps" }
+
+  # =========================================================================
+  # 8. FAVORITES
+  # =========================================================================
+  - event_name: item_favorited
+    category: Favorites
+    priority: Medium
+    schema_version: 1
+    description: Fired when a user marks a discipline, professor, or material as a favorite.
+    trigger: Favorite toggle button turned ON.
+    metrics:
+      - Feature Adoption
+      - Power Users
+    payload:
+      target_type: { type: string, enum: ["discipline", "professor", "material"], description: "Type of entity favorited" }
+      target_id: { type: integer, description: "ID of favorited entity" }
+
+  # =========================================================================
+  # 9. NOTIFICATIONS
+  # =========================================================================
+  - event_name: notification_opened
+    category: Notifications
+    priority: Medium
+    schema_version: 1
+    description: Fired when a user taps or opens a push/in-app notification.
+    trigger: Notification click handler fires.
+    metrics:
+      - Re-engagement Rate
+    payload:
+      notification_type: { type: string, description: "Category of notification (e.g. NEW_MATERIAL_AVAILABLE)" }
+      time_to_open_seconds: { type: integer, description: "Seconds elapsed between dispatch and open" }
+
+  # =========================================================================
+  # 10. ERRORS & QUALITY
+  # =========================================================================
+  - event_name: api_error_occurred
+    category: Errors
+    priority: Critical
+    schema_version: 1
+    description: Fired when a backend API endpoint encounters an unhandled exception or 5xx/4xx error.
+    trigger: Global CodeIgniter exception handler.
+    metrics:
+      - API Error Rate
+    payload:
+      error_code: { type: string, description: "Internal error classification code" }
+      endpoint: { type: string, description: "API path (e.g. /api/ratings)" }
+      http_status: { type: integer, description: "HTTP status response code (e.g. 500, 422)" }
+
+  - event_name: frontend_error_occurred
+    category: Errors
+    priority: Critical
+    schema_version: 1
+    description: Fired when an unhandled JavaScript error or react boundary exception occurs.
+    trigger: Window.onerror / React Error Boundary.
+    metrics:
+      - Frontend Error Rate
+    payload:
+      error_name: { type: string, description: "JS error name (e.g. TypeError)" }
+      screen_name: { type: string, description: "Screen active when error occurred" }
+
+  # =========================================================================
+  # 11. SYSTEM & SESSIONS
+  # =========================================================================
+  - event_name: app_opened
+    category: System
+    priority: Critical
+    schema_version: 1
+    description: Fired on application cold start or page load after a period of inactivity.
+    trigger: App initialization handler.
+    metrics:
+      - DAU
+      - WAU
+      - MAU
+      - Sessions per User
+    payload:
+      is_cold_start: { type: boolean, description: "True if fresh app launch" }
+      platform: { type: string, enum: ["web", "mobile_ios", "mobile_android"], description: "Client platform" }
+
+  # =========================================================================
+  # 12. ADMIN
+  # =========================================================================
+  - event_name: admin_action_performed
+    category: Admin
+    priority: Low
+    schema_version: 1
+    description: Fired when an administrative or moderation action is performed from an admin surface.
+    trigger: Admin controller action executed.
+    metrics:
+      - Admin Audit Trail
+    payload:
+      action_type: { type: string, enum: ["content_removed", "user_role_changed", "content_approved"], description: "Action type" }
+      target_type: { type: string, description: "Target entity type" }
