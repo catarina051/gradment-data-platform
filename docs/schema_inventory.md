@@ -5,14 +5,48 @@
 
 ---
 
-## Summary
+## 1. Provenance & Data Source
+
+> [!NOTE]
+> **Data Source Note:** This inventory was compiled by parsing the 32 CodeIgniter 4 PHP migration files (`GradMentBack/app/Database/Migrations/`) and cross-referencing against the 22 backend models (`GradMentBack/app/Models/`). `inventory_schema.py` also supports live connection to MySQL via environment variables (`.env`) for production validation.
 
 - **Total Tables Inventoried:** 17
 - **Data Platform Target:** PostgreSQL Staging Schema (`raw`)
 
 ---
 
-## Table Details
+## 2. Inferred & Application-Level Relationships (Human Reviewed)
+
+The following core relationships are enforced at the application code/ORM level rather than via strict MySQL foreign key constraints:
+
+1. **`materias_matriculadas.disciplina_id → curriculo_disciplinas.id`**:
+   - *Migration:* `2026-06-23-145404_FixAddDisciplinaIdToMateriasMatriculadas.php`
+   - *Review:* Connects active student enrollments (`materias_matriculadas`) to the curriculum grid subject (`curriculo_disciplinas`). Essential for course engagement metrics.
+2. **`usuario_academicos.usuario_id → usuarios.id`**:
+   - *Migration:* `2026-05-29-210000_CreateUsuarioAcademicos.php`
+   - *Review:* Connects a user's academic profile to their identity account in `usuarios`.
+3. **`avaliacoes_disciplinas.disciplina_id → curriculo_disciplinas.id`**:
+   - *Migration:* `2026-06-30-120000_AddIndexDisciplinaIdToAvaliacoesDisciplinas.php`
+   - *Review:* Connects ratings directly to the curriculum discipline entity.
+
+---
+
+## 3. Operational Gaps & Missing Analytics Primitives
+
+The operational MySQL database is structured strictly for transactional OLTP application processing. The following analytical primitives **do not exist** in the source database and represent the starting scope for Phase 1 & Phase 2:
+
+1. **Missing Event Stream Table (`analytics_events`)**:
+   - There is no generic event log table in MySQL. Phase 2 will introduce an additive, non-blocking `analytics_events` table.
+2. **Missing Session Entity (`fct_sessions`)**:
+   - Table `sessoes` stores server-side session payloads/IPs, but there is no 30-minute inactivity boundary sessionization logic for analytics.
+3. **Missing Pseudonymization / Anonymization Layer**:
+   - Operational user IDs are raw integers. The data platform requires SHA-256 salted hashing during extraction to produce `user_key`.
+4. **Missing Pre-aggregated Retention Facts (`fct_daily_user_activity`)**:
+   - No daily user activity aggregate table exists in source; must be built as a dbt mart in Phase 4.
+
+---
+
+## 4. Table Details
 
 ### Table: `convites_coordenadores`
 - **Source File:** `2026-06-02-150000_CreateConvitesCoordenadores.php`

@@ -2,6 +2,7 @@
 
 **System:** GradMent Data Platform — Operational Database Inventory  
 **Target Warehousing Layer:** Staging Schema (`raw`) → Star Schema (`marts`)  
+**Data Source:** PHP Migrations (`GradMentBack/app/Database/Migrations/`) & Models + MySQL `.env` connection support  
 
 ---
 
