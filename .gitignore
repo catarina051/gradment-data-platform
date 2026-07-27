@@ -1,0 +1,26 @@
+# Environment variables & secrets
+.env
+.env.local
+*.env
+
+# Python & execution cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Airflow & Local Data Warehouse
+airflow/logs/
+airflow/airflow-webserver.pid
+postgres_data/
+metabase_data/
+target/
+dbt_packages/
+logs/
+
+# Operating system files
+.DS_Store
+Thumbs.db
