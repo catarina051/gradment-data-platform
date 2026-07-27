@@ -10,25 +10,25 @@
 > [!IMPORTANT]
 > **Validação contra produção:** pendente. Este inventário foi extraído de migrations/models e validado contra o **MySQL local (XAMPP)** em **2026-07-27**. A validação contra o banco de produção real permanece pendente antes da Fase 3 (star schema).
 
-- **Total Tables Inventoried (CodeIgniter Migrations):** 17 core domain tables
 - **Total Physical Tables in Live MySQL (XAMPP):** 24 physical tables
 - **Data Platform Target:** PostgreSQL Staging Schema (`raw`)
 - **Live MySQL Validation (XAMPP):** SUCCESS (2026-07-27)
 
 ---
 
-## 2. Live Schema Diff (MySQL Physical DB vs Migration Inventory)
+## 2. Live Schema Diff & Auxiliary Tables Scoping
 
-Cross-referencing live XAMPP MySQL (`gradment` DB) against code migration files revealed the following physical schema details:
+Cross-referencing live XAMPP MySQL (`gradment` DB) against code migration files revealed 24 physical tables. Explicit scoping for the Data Platform:
 
-1. **Table Count Difference (24 physical vs 17 migration-inventoried)**:
-   - **Auxiliary/Operational Tables in Live DB:** `aluno_disciplinas`, `aluno_disciplinas_historico`, `horarios_matriculadas`, `ofertas_disciplinas`, `ofertas_horarios`, `curriculo_dependencias`, and `migrations`.
-   - *Impact on Data Platform:* Auxiliary tables like `ofertas_disciplinas` and `aluno_disciplinas_historico` provide essential dimension attributes for professor assignment and historical grade distributions in Phase 3 star schema.
+### In-Scope Candidate Tables (Phase 3 Star Schema Dimensions & Facts)
+1. **`ofertas_disciplinas` & `ofertas_horarios`**: **IN SCOPE** — Provide faculty/professor assignment, semester offerings (`docente`, `turma`, `ano_semestre`), and schedule grid context for dimension `dim_professors` and `dim_courses`.
+2. **`curriculo_dependencias`**: **IN SCOPE** — Prerequisite and corequisite dependency matrix between subjects, feeding `dim_courses` hierarchy.
+3. **`aluno_disciplinas_historico`**: **IN SCOPE** — Historical transcript performance (`situacao`, `nota`, `frequencia`) feeding grade distribution analysis in `fct_ratings` / `fct_daily_user_activity`.
 
-2. **Column Evolution Diff (`avaliacoes_disciplinas`)**:
-   - Initial migration defined legacy columns `nota_dificuldade` and `nota_didatica`.
-   - Migration `2026-06-18-165628_UpdateAvaliacoesDisciplinasToHistorico.php` updated columns to physical names: `dificuldade` (tinyint), `esforco` (tinyint), `passou` (boolean), `historico_id` (bigint).
-   - *Live Status:* Physical columns `dificuldade`, `esforco`, `passou` confirmed directly in local XAMPP MySQL database.
+### Out-of-Scope Auxiliary / Transient Tables
+1. **`aluno_disciplinas`**: **OUT OF SCOPE** — Transient internal application status table; superseded by `materias_matriculadas` for active enrollments.
+2. **`horarios_matriculadas`**: **OUT OF SCOPE** — Purely visual UI layout grid for student schedule display; redundant with `materias_matriculadas`.
+3. **`migrations`**: **OUT OF SCOPE** — Internal CodeIgniter framework tracking table.
 
 ---
 
@@ -44,7 +44,8 @@ The following three core relationships were verified directly via SQL JOINs on r
    - *Live Data Verification:* **CONFIRMED** (`SELECT mm.*, cd.nome FROM materias_matriculadas mm JOIN curriculo_disciplinas cd ON mm.disciplina_id = cd.id LIMIT 10` returned 5 active course enrollment records: `FUNDAMENTOS DE ELETROMAGNETISMO`, `ELETRÔNICA I`, `ARQUITETURA DE COMPUTADORES`, `ALGORITMOS EM GRAFOS`).
 3. **`avaliacoes_disciplinas.disciplina_id → curriculo_disciplinas.id`**:
    - *Migration:* `2026-06-30-120000_AddIndexDisciplinaIdToAvaliacoesDisciplinas.php`
-   - *Live Data Verification:* **CONFIRMED WITH REAL TEST ROW** (Inserted test rating row `usuario_id=3`, `disciplina_id=26`, `dificuldade=4`, `esforco=3`. Executed `SELECT ad.*, cd.nome FROM avaliacoes_disciplinas ad JOIN curriculo_disciplinas cd ON ad.disciplina_id = cd.id LIMIT 10`, which returned 1 record cleanly joining rating `disciplina_id=26` with `cd.nome = FUNDAMENTOS DE ELETROMAGNETISMO`).
+   - *Physical Column Schema Note:* Verified that physical columns updated from legacy `nota_dificuldade`/`nota_didatica` to `dificuldade` (tinyint), `esforco` (tinyint), `passou` (boolean), `historico_id` (bigint) via migration `2026-06-18-165628_UpdateAvaliacoesDisciplinasToHistorico.php`.
+   - *Live Data Verification:* **CONFIRMED WITH REAL TEST ROW** (Inserted test rating row `usuario_id=3`, `disciplina_id=26`, `dificuldade=4`, `esforco=3`, `passou=1`. Executed `SELECT ad.*, cd.nome FROM avaliacoes_disciplinas ad JOIN curriculo_disciplinas cd ON ad.disciplina_id = cd.id LIMIT 10`, which returned 1 record cleanly joining rating `disciplina_id=26` with `cd.nome = FUNDAMENTOS DE ELETROMAGNETISMO`).
 
 ---
 
@@ -65,13 +66,73 @@ The operational MySQL database is structured strictly for transactional OLTP app
 
 ## 5. Table Details
 
-### Table: `convites_coordenadores`
-- **Source File:** `2026-06-02-150000_CreateConvitesCoordenadores.php`
+### Table: `aluno_disciplinas`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `BIGINT` | No | Yes | - |
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | -> `usuarios.id` |
+| `disciplina_id` | `BIGINT(20) UNSIGNED` | No | No | -> `curriculo_disciplinas.id` |
+| `status` | `ENUM('CONCLUIDA','EM_ANDAMENTO','NAO_CURSADA','REPROVADA')` | Yes | No | - |
+| `created_at` | `DATETIME` | Yes | No | - |
+| `updated_at` | `DATETIME` | Yes | No | - |
+| `deleted_at` | `DATETIME` | Yes | No | - |
+
+### Table: `aluno_disciplinas_historico`
+- **Source:** `Live MySQL (gradment)`
+- **Primary Key:** `id`
+
+| Column | Type | Nullable | Primary Key | Foreign Key / Notes |
+|---|---|---|---|---|
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | -> `usuarios.id` |
+| `curso_id` | `BIGINT(20) UNSIGNED` | No | No | -> `cursos.id` |
+| `disciplina_id` | `BIGINT(20) UNSIGNED` | No | No | -> `curriculo_disciplinas.id` |
+| `oferta_id` | `BIGINT(20) UNSIGNED` | Yes | No | -> `ofertas_disciplinas.id` |
+| `codigo_externo` | `VARCHAR(30)` | Yes | No | - |
+| `nome_original` | `VARCHAR(255)` | No | No | - |
+| `turma` | `VARCHAR(10)` | Yes | No | - |
+| `ano_periodo` | `VARCHAR(20)` | Yes | No | - |
+| `situacao_sigaa` | `VARCHAR(20)` | Yes | No | - |
+| `status` | `VARCHAR(20)` | No | No | - |
+| `passou` | `TINYINT(1)` | No | No | - |
+| `carga_horaria` | `SMALLINT(5) UNSIGNED` | Yes | No | - |
+| `frequencia` | `DECIMAL(5,2)` | Yes | No | - |
+| `media_final` | `DECIMAL(5,2)` | Yes | No | - |
+| `conceito` | `VARCHAR(10)` | Yes | No | - |
+| `data_inicio` | `DATE` | Yes | No | - |
+| `data_fim` | `DATE` | Yes | No | - |
+| `origem` | `VARCHAR(40)` | No | No | - |
+| `created_at` | `DATETIME` | Yes | No | - |
+| `updated_at` | `DATETIME` | Yes | No | - |
+| `deleted_at` | `DATETIME` | Yes | No | - |
+
+### Table: `avaliacoes_disciplinas`
+- **Source:** `Live MySQL (gradment)`
+- **Primary Key:** `id`
+
+| Column | Type | Nullable | Primary Key | Foreign Key / Notes |
+|---|---|---|---|---|
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | -> `usuarios.id` |
+| `disciplina_id` | `BIGINT(20) UNSIGNED` | No | No | -> `curriculo_disciplinas.id` |
+| `passou` | `TINYINT(1)` | No | No | - |
+| `dificuldade` | `TINYINT(3) UNSIGNED` | No | No | - |
+| `esforco` | `TINYINT(3) UNSIGNED` | No | No | - |
+| `created_at` | `DATETIME` | Yes | No | - |
+| `updated_at` | `DATETIME` | Yes | No | - |
+| `deleted_at` | `DATETIME` | Yes | No | - |
+| `historico_id` | `BIGINT(20) UNSIGNED` | Yes | No | -> `aluno_disciplinas_historico.id` |
+
+### Table: `convites_coordenadores`
+- **Source:** `Live MySQL (gradment)`
+- **Primary Key:** `id`
+
+| Column | Type | Nullable | Primary Key | Foreign Key / Notes |
+|---|---|---|---|---|
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
 | `email` | `VARCHAR(255)` | No | No | - |
 | `token` | `VARCHAR(64)` | No | No | - |
 | `expira_em` | `DATETIME` | No | No | - |
@@ -80,226 +141,263 @@ The operational MySQL database is structured strictly for transactional OLTP app
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
 
-### Table: `curriculo_disciplinas_relacoes`
-- **Source File:** `2026-05-29-151000_AddHistoricoEscolarImportacaoEstrutura.php`
+### Table: `curriculo_dependencias`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `BIGINT` | No | Yes | - |
-| `curso_id` | `BIGINT` | No | No | -> `cursos.id` |
-| `disciplina_id` | `BIGINT` | No | No | -> `curriculo_disciplinas.id` |
-| `disciplina_relacionada_id` | `BIGINT` | Yes | No | -> `curriculo_disciplinas.id` |
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `disciplina_id` | `BIGINT(20) UNSIGNED` | No | No | -> `curriculo_disciplinas.id` |
+| `disciplina_dependencia_id` | `BIGINT(20) UNSIGNED` | No | No | -> `curriculo_disciplinas.id` |
+| `tipo` | `ENUM('PRE','CO')` | No | No | - |
+| `created_at` | `DATETIME` | Yes | No | - |
+| `updated_at` | `DATETIME` | Yes | No | - |
+| `deleted_at` | `DATETIME` | Yes | No | - |
+
+### Table: `curriculo_disciplinas`
+- **Source:** `Live MySQL (gradment)`
+- **Primary Key:** `id`
+
+| Column | Type | Nullable | Primary Key | Foreign Key / Notes |
+|---|---|---|---|---|
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `curso_id` | `BIGINT(20) UNSIGNED` | No | No | -> `cursos.id` |
+| `codigo` | `VARCHAR(20)` | No | No | - |
+| `codigo_externo` | `VARCHAR(30)` | Yes | No | - |
+| `nome` | `VARCHAR(255)` | No | No | - |
+| `periodo` | `SMALLINT(5) UNSIGNED` | Yes | No | - |
+| `carga_horaria` | `SMALLINT(5) UNSIGNED` | Yes | No | - |
+| `ementa` | `TEXT` | Yes | No | - |
+| `plano_curso` | `TEXT` | Yes | No | - |
+| `created_at` | `DATETIME` | Yes | No | - |
+| `updated_at` | `DATETIME` | Yes | No | - |
+| `deleted_at` | `DATETIME` | Yes | No | - |
+| `eixo` | `VARCHAR(150)` | Yes | No | - |
+
+### Table: `curriculo_disciplinas_relacoes`
+- **Source:** `Live MySQL (gradment)`
+- **Primary Key:** `id`
+
+| Column | Type | Nullable | Primary Key | Foreign Key / Notes |
+|---|---|---|---|---|
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `curso_id` | `BIGINT(20) UNSIGNED` | No | No | -> `cursos.id` |
+| `disciplina_id` | `BIGINT(20) UNSIGNED` | No | No | -> `curriculo_disciplinas.id` |
+| `disciplina_relacionada_id` | `BIGINT(20) UNSIGNED` | Yes | No | -> `curriculo_disciplinas.id` |
 | `codigo_relacionado` | `VARCHAR(30)` | Yes | No | - |
 | `nome_relacionado` | `VARCHAR(255)` | Yes | No | - |
 | `tipo_relacao` | `VARCHAR(40)` | No | No | - |
-| `similaridade` | `DECIMAL(5)` | Yes | No | - |
+| `similaridade` | `DECIMAL(5,2)` | Yes | No | - |
 | `observacao` | `TEXT` | Yes | No | - |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
-| `usuario_id` | `INT` | No | No | -> `usuarios.id` |
-| `oferta_id` | `BIGINT` | Yes | No | -> `ofertas_disciplinas.id` |
-| `codigo_externo` | `VARCHAR(30)` | Yes | No | - |
-| `nome_original` | `VARCHAR(255)` | No | No | - |
-| `turma` | `VARCHAR(10)` | Yes | No | - |
-| `ano_periodo` | `VARCHAR(20)` | Yes | No | - |
-| `situacao_sigaa` | `VARCHAR(20)` | Yes | No | - |
-| `status` | `VARCHAR(20)` | No | No | - |
-| `passou` | `BOOLEAN` | No | No | - |
-| `carga_horaria` | `SMALLINT` | Yes | No | - |
-| `frequencia` | `DECIMAL(5)` | Yes | No | - |
-| `media_final` | `DECIMAL(5)` | Yes | No | - |
-| `conceito` | `VARCHAR(10)` | Yes | No | - |
-| `data_inicio` | `DATE` | Yes | No | - |
-| `data_fim` | `DATE` | Yes | No | - |
-| `origem` | `VARCHAR(40)` | No | No | - |
 
 ### Table: `curriculo_import_jobs`
-- **Source File:** `2026-06-22-205644_CreateCurriculoImportJobs.php`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `INT` | No | Yes | - |
-| `curso_id` | `INT` | No | No | - |
-| `usuario_id` | `INT` | No | No | - |
+| `id` | `INT(10) UNSIGNED` | No | Yes | - |
+| `curso_id` | `INT(10) UNSIGNED` | No | No | - |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | - |
 | `tipo` | `VARCHAR(50)` | No | No | - |
 | `status` | `VARCHAR(50)` | No | No | - |
-| `payload` | `JSON` | Yes | No | - |
-| `result` | `JSON` | Yes | No | - |
+| `payload` | `LONGTEXT` | Yes | No | - |
+| `result` | `LONGTEXT` | Yes | No | - |
 | `error_message` | `TEXT` | Yes | No | - |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 
 ### Table: `cursos`
-- **Source File:** `2026-05-25-180000_CreateSprint4EstruturaCurricular.php`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `BIGINT` | No | Yes | - |
-| `usuario_id` | `INT` | No | No | -> `usuarios.id` |
-| `faculdade_id` | `BIGINT` | Yes | No | -> `faculdades.id` |
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | -> `usuarios.id` |
+| `faculdade_id` | `BIGINT(20) UNSIGNED` | Yes | No | -> `faculdades.id` |
 | `nome_curso` | `VARCHAR(255)` | No | No | - |
 | `descricao_apresentacao` | `TEXT` | Yes | No | - |
 | `ementa` | `TEXT` | Yes | No | - |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
-| `curso_id` | `BIGINT` | No | No | -> `cursos.id` |
-| `codigo` | `VARCHAR(20)` | No | No | - |
-| `nome` | `VARCHAR(255)` | No | No | - |
-| `periodo` | `SMALLINT` | Yes | No | - |
-| `carga_horaria` | `SMALLINT` | Yes | No | - |
-| `disciplina_id` | `BIGINT` | No | No | -> `curriculo_disciplinas.id` |
-| `disciplina_dependencia_id` | `BIGINT` | No | No | -> `curriculo_disciplinas.id` |
-| `tipo` | `ENUM(['PRE)` | No | No | - |
-| `status` | `ENUM(['CONCLUIDA)` | No | No | - |
-| `passou` | `BOOLEAN` | No | No | - |
-| `dificuldade` | `TINYINT` | No | No | - |
-| `esforco` | `TINYINT` | No | No | - |
 
 ### Table: `faculdades`
-- **Source File:** `2026-05-08-100000_CreateFaculdades.php`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `BIGINT` | No | Yes | - |
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | Yes | No | - |
 | `nome` | `VARCHAR(255)` | No | No | - |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
 
-### Table: `horarios_materias`
-- **Source File:** `2026-05-08-100200_CreateHorariosMaterias.php`
+### Table: `horarios_matriculadas`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `BIGINT` | No | Yes | - |
-| `materia_id` | `BIGINT` | No | No | -> `materias.id` |
-| `dia_semana` | `TINYINT` | No | No | - |
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | Yes | No | - |
+| `materia_id` | `BIGINT(20) UNSIGNED` | No | No | -> `materias_matriculadas.id` |
+| `dia_semana` | `TINYINT(4)` | No | No | - |
 | `horario_inicio` | `TIME` | No | No | - |
 | `horario_fim` | `TIME` | No | No | - |
+| `horario_sigaa` | `VARCHAR(20)` | Yes | No | - |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
 
 ### Table: `materia_arquivos`
-- **Source File:** `2026-06-11-230000_CreateMateriaArquivos.php`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `BIGINT` | No | Yes | - |
-| `materia_id` | `BIGINT` | No | No | -> `materias_matriculadas.id` |
-| `usuario_id` | `INT` | No | No | -> `usuarios.id` |
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `materia_id` | `BIGINT(20) UNSIGNED` | Yes | No | -> `materias_matriculadas.id` |
+| `disciplina_id` | `BIGINT(20) UNSIGNED` | Yes | No | -> `curriculo_disciplinas.id` |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | -> `usuarios.id` |
 | `arquivo_id` | `VARCHAR(32)` | No | No | - |
 | `bucket` | `VARCHAR(100)` | No | No | - |
 | `caminho` | `VARCHAR(255)` | No | No | - |
 | `nome_original` | `VARCHAR(255)` | No | No | - |
 | `mime_type` | `VARCHAR(100)` | Yes | No | - |
 | `extensao` | `VARCHAR(20)` | Yes | No | - |
-| `tamanho_bytes` | `BIGINT` | Yes | No | - |
-| `tipo_contribuicao` | `ENUM(['lista_exercicios)` | No | No | - |
-| `parte_disciplina` | `ENUM(['P1)` | No | No | - |
-| `ano` | `SMALLINT` | No | No | - |
-| `periodo` | `TINYINT` | No | No | - |
+| `tamanho_bytes` | `BIGINT(20) UNSIGNED` | Yes | No | - |
+| `tipo_contribuicao` | `ENUM('LISTA_EXERCICIOS','PROVA_ANTIGA','SLIDE','OUTRO')` | No | No | - |
+| `parte_disciplina` | `ENUM('P1','P2','P3','P4')` | No | No | - |
+| `ano` | `SMALLINT(5) UNSIGNED` | No | No | - |
+| `periodo` | `TINYINT(3) UNSIGNED` | No | No | - |
 | `comentario` | `TEXT` | Yes | No | - |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
+| `likes` | `INT(10) UNSIGNED` | Yes | No | - |
+| `dislikes` | `INT(10) UNSIGNED` | Yes | No | - |
 
 ### Table: `materia_arquivos_votos`
-- **Source File:** `2026-06-18-141000_CreateMateriaArquivosVotos.php`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `likes` | `INT` | No | No | - |
-| `dislikes` | `INT` | No | No | - |
-| `id` | `BIGINT` | No | Yes | - |
-| `arquivo_id` | `BIGINT` | No | No | -> `materia_arquivos.id` |
-| `usuario_id` | `INT` | No | No | -> `usuarios.id` |
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `arquivo_id` | `BIGINT(20) UNSIGNED` | No | No | -> `materia_arquivos.id` |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | -> `usuarios.id` |
 | `valor` | `TINYINT(1)` | No | No | - |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 
-### Table: `materias`
-- **Source File:** `2026-05-08-100100_CreateMaterias.php`
+### Table: `materias_matriculadas`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `BIGINT` | No | Yes | - |
-| `faculdade_id` | `BIGINT` | No | No | -> `faculdades.id` |
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | Yes | No | - |
+| `faculdade_id` | `BIGINT(20) UNSIGNED` | No | No | -> `faculdades.id` |
+| `disciplina_id` | `BIGINT(20) UNSIGNED` | Yes | No | - |
+| `oferta_id` | `BIGINT(20) UNSIGNED` | Yes | No | - |
 | `codigo` | `VARCHAR(20)` | No | No | - |
 | `nome` | `VARCHAR(255)` | No | No | - |
 | `local_sala` | `VARCHAR(50)` | Yes | No | - |
 | `turma` | `VARCHAR(10)` | Yes | No | - |
-| `status` | `ENUM(['MATRICULADO)` | No | No | - |
+| `status` | `ENUM('MATRICULADO','TRANCADO','INDEFERIDO','CONCLUIDO')` | No | No | - |
 | `data_inicio` | `DATE` | Yes | No | - |
 | `data_fim` | `DATE` | Yes | No | - |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
 
-### Table: `ofertas_disciplinas`
-- **Source File:** `2026-05-28-120000_AddCurriculoImportacaoEstrutura.php`
+### Table: `migrations`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `version` | `VARCHAR(255)` | No | No | - |
+| `class` | `VARCHAR(255)` | No | No | - |
+| `group` | `VARCHAR(255)` | No | No | - |
+| `namespace` | `VARCHAR(255)` | No | No | - |
+| `time` | `INT(11)` | No | No | - |
+| `batch` | `INT(11) UNSIGNED` | No | No | - |
+
+### Table: `ofertas_disciplinas`
+- **Source:** `Live MySQL (gradment)`
+- **Primary Key:** `id`
+
+| Column | Type | Nullable | Primary Key | Foreign Key / Notes |
+|---|---|---|---|---|
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `curso_id` | `BIGINT(20) UNSIGNED` | No | No | -> `cursos.id` |
+| `disciplina_id` | `BIGINT(20) UNSIGNED` | Yes | No | -> `curriculo_disciplinas.id` |
 | `codigo_externo` | `VARCHAR(30)` | Yes | No | - |
-| `plano_curso` | `TEXT` | Yes | No | - |
-| `id` | `BIGINT` | No | Yes | - |
-| `curso_id` | `BIGINT` | No | No | -> `cursos.id` |
-| `disciplina_id` | `BIGINT` | Yes | No | -> `curriculo_disciplinas.id` |
 | `turma` | `VARCHAR(10)` | No | No | - |
 | `ano_periodo` | `VARCHAR(20)` | Yes | No | - |
 | `docentes` | `TEXT` | Yes | No | - |
-| `carga_horaria` | `SMALLINT` | Yes | No | - |
+| `carga_horaria` | `SMALLINT(5) UNSIGNED` | Yes | No | - |
 | `tipo` | `VARCHAR(30)` | Yes | No | - |
 | `modalidade` | `VARCHAR(50)` | Yes | No | - |
 | `situacao` | `VARCHAR(30)` | Yes | No | - |
 | `horario_bruto` | `TEXT` | Yes | No | - |
 | `local` | `VARCHAR(255)` | Yes | No | - |
-| `matriculados` | `SMALLINT` | Yes | No | - |
-| `capacidade` | `SMALLINT` | Yes | No | - |
+| `matriculados` | `SMALLINT(5) UNSIGNED` | Yes | No | - |
+| `capacidade` | `SMALLINT(5) UNSIGNED` | Yes | No | - |
 | `data_inicio` | `DATE` | Yes | No | - |
 | `data_fim` | `DATE` | Yes | No | - |
 | `origem_relatorio` | `VARCHAR(40)` | Yes | No | - |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
-| `oferta_id` | `BIGINT` | No | No | -> `ofertas_disciplinas.id` |
-| `dia_semana` | `TINYINT` | No | No | - |
-| `horario_inicio` | `TIME` | No | No | - |
-| `horario_fim` | `TIME` | No | No | - |
-| `horario_sigaa` | `VARCHAR(20)` | Yes | No | - |
 
-### Table: `papeis`
-- **Source File:** `2026-04-13-210117_CreatePapeis.php`
+### Table: `ofertas_horarios`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `INT` | No | Yes | - |
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `oferta_id` | `BIGINT(20) UNSIGNED` | No | No | -> `ofertas_disciplinas.id` |
+| `dia_semana` | `TINYINT(3) UNSIGNED` | No | No | - |
+| `horario_inicio` | `TIME` | No | No | - |
+| `horario_fim` | `TIME` | No | No | - |
+| `horario_sigaa` | `VARCHAR(20)` | Yes | No | - |
+| `created_at` | `DATETIME` | Yes | No | - |
+| `updated_at` | `DATETIME` | Yes | No | - |
+| `deleted_at` | `DATETIME` | Yes | No | - |
+
+### Table: `papeis`
+- **Source:** `Live MySQL (gradment)`
+- **Primary Key:** `id`
+
+| Column | Type | Nullable | Primary Key | Foreign Key / Notes |
+|---|---|---|---|---|
+| `id` | `INT(10) UNSIGNED` | No | Yes | - |
 | `nome` | `VARCHAR(50)` | No | No | - |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
 
 ### Table: `sessoes`
-- **Source File:** `2026-04-15-100300_CreateSessoes.php`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `INT` | No | Yes | - |
-| `usuario_id` | `INT` | No | No | -> `usuarios.id` |
+| `id` | `INT(10) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | -> `usuarios.id` |
 | `token_sessao` | `VARCHAR(255)` | No | No | - |
 | `ip` | `VARCHAR(45)` | Yes | No | - |
 | `user_agent` | `VARCHAR(255)` | Yes | No | - |
@@ -310,13 +408,13 @@ The operational MySQL database is structured strictly for transactional OLTP app
 | `updated_at` | `DATETIME` | Yes | No | - |
 
 ### Table: `tokens_mudanca_senha`
-- **Source File:** `2026-04-15-100100_CreateTokensMudancaSenha.php`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `INT` | No | Yes | - |
-| `usuario_id` | `INT` | No | No | -> `usuarios.id` |
+| `id` | `INT(10) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | -> `usuarios.id` |
 | `token_hash` | `VARCHAR(255)` | No | No | - |
 | `expira_em` | `DATETIME` | No | No | - |
 | `usado_em` | `DATETIME` | Yes | No | - |
@@ -324,55 +422,58 @@ The operational MySQL database is structured strictly for transactional OLTP app
 | `updated_at` | `DATETIME` | Yes | No | - |
 
 ### Table: `usuario_academicos`
-- **Source File:** `2026-05-29-210000_CreateUsuarioAcademicos.php`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `BIGINT` | No | Yes | - |
-| `usuario_id` | `INT` | No | No | -> `usuarios.id` |
-| `faculdade_id` | `BIGINT` | No | No | -> `faculdades.id` |
-| `curso_id` | `BIGINT` | No | No | -> `cursos.id` |
+| `id` | `BIGINT(20) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | -> `usuarios.id` |
+| `faculdade_id` | `BIGINT(20) UNSIGNED` | No | No | -> `faculdades.id` |
+| `curso_id` | `BIGINT(20) UNSIGNED` | Yes | No | -> `cursos.id` |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
 
 ### Table: `usuarios`
-- **Source File:** `2026-04-13-203354_CreateUsers.php`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `INT` | No | Yes | - |
+| `id` | `INT(10) UNSIGNED` | No | Yes | - |
 | `cpf` | `VARCHAR(11)` | No | No | - |
 | `email` | `VARCHAR(100)` | No | No | - |
 | `nome` | `VARCHAR(150)` | No | No | - |
+| `foto_perfil` | `VARCHAR(255)` | Yes | No | - |
 | `senha` | `VARCHAR(255)` | No | No | - |
+| `token_integracao` | `TEXT` | Yes | No | - |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
+| `onboarding` | `TINYINT(1)` | Yes | No | - |
 
 ### Table: `usuarios_papeis`
-- **Source File:** `2026-04-15-100000_CreateUsuariosPapeis.php`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `INT` | No | Yes | - |
-| `usuario_id` | `INT` | No | No | -> `usuarios.id` |
-| `papel_id` | `INT` | No | No | -> `papeis.id` |
+| `id` | `INT(10) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | -> `usuarios.id` |
+| `papel_id` | `INT(10) UNSIGNED` | No | No | -> `papeis.id` |
 | `created_at` | `DATETIME` | Yes | No | - |
 | `updated_at` | `DATETIME` | Yes | No | - |
 | `deleted_at` | `DATETIME` | Yes | No | - |
 
 ### Table: `verificacoes_email`
-- **Source File:** `2026-04-15-100200_CreateVerificacoesEmail.php`
+- **Source:** `Live MySQL (gradment)`
 - **Primary Key:** `id`
 
 | Column | Type | Nullable | Primary Key | Foreign Key / Notes |
 |---|---|---|---|---|
-| `id` | `INT` | No | Yes | - |
-| `usuario_id` | `INT` | No | No | -> `usuarios.id` |
+| `id` | `INT(10) UNSIGNED` | No | Yes | - |
+| `usuario_id` | `INT(10) UNSIGNED` | No | No | -> `usuarios.id` |
 | `token_hash` | `VARCHAR(255)` | No | No | - |
 | `expira_em` | `DATETIME` | No | No | - |
 | `verificado_em` | `DATETIME` | Yes | No | - |

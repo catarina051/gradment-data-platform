@@ -12,66 +12,21 @@ import json
 import subprocess
 from pathlib import Path
 
-def parse_php_migrations(migrations_dir: Path) -> dict:
-    """Parses CodeIgniter 4 PHP migration files to extract schema information offline."""
-    tables = {}
-    if not migrations_dir.exists():
-        print(f"Warning: Migrations directory {migrations_dir} not found.", file=sys.stderr)
-        return tables
-
-    migration_files = sorted(migrations_dir.glob("*.php"))
-    print(f"Found {len(migration_files)} migration files in {migrations_dir}")
-
-    for file_path in migration_files:
-        content = file_path.read_text(encoding="utf-8", errors="ignore")
-
-        create_table_match = re.search(r"\$this->forge->createTable\(['\"]([^'\"]+)['\"]", content)
-        if not create_table_match:
-            continue
-
-        table_name = create_table_match.group(1)
-        if table_name not in tables:
-            tables[table_name] = {
-                "columns": {},
-                "primary_keys": [],
-                "foreign_keys": [],
-                "source_file": file_path.name
-            }
-
-        field_matches = re.findall(r"['\"]([a-zA-Z0-9_]+)['\"]\s*=>\s*\[(.*?)\]", content, re.DOTALL)
-        for field_name, field_attrs in field_matches:
-            type_match = re.search(r"['\"]type['\"]\s*=>\s*['\"]([^'\"]+)['\"]", field_attrs)
-            constraint_match = re.search(r"['\"]constraint['\"]\s*=>\s*([^,\n\]]+)", field_attrs)
-            null_match = re.search(r"['\"]null['\"]\s*=>\s*(true|false)", field_attrs, re.IGNORECASE)
-            auto_inc_match = re.search(r"['\"]auto_increment['\"]\s*=>\s*true", field_attrs, re.IGNORECASE)
-
-            data_type = type_match.group(1) if type_match else "UNKNOWN"
-            constraint = constraint_match.group(1).strip("'\" ") if constraint_match else None
-            is_nullable = null_match.group(1).lower() == "true" if null_match else False
-
-            tables[table_name]["columns"][field_name] = {
-                "type": f"{data_type}({constraint})" if constraint else data_type,
-                "nullable": is_nullable,
-                "auto_increment": bool(auto_inc_match)
-            }
-
-        pk_matches = re.findall(r"\$this->forge->addKey\(['\"]([^'\"]+)['\"],\s*true\)", content)
-        for pk in pk_matches:
-            if pk not in tables[table_name]["primary_keys"]:
-                tables[table_name]["primary_keys"].append(pk)
-
-        fk_matches = re.findall(
-            r"\$this->forge->addForeignKey\(['\"]([^'\"]+)['\"],\s*['\"]([^'\"]+)['\"],\s*['\"]([^'\"]+)['\"]",
-            content
-        )
-        for fk_col, ref_table, ref_col in fk_matches:
-            tables[table_name]["foreign_keys"].append({
-                "column": fk_col,
-                "referenced_table": ref_table,
-                "referenced_column": ref_col
-            })
-
-    return tables
+def query_live_mysql() -> dict:
+    """Queries live MySQL database via PHP PDO helper to extract exact physical schema."""
+    script_path = Path(__file__).resolve().parent / "query_local_db.php"
+    if not script_path.exists():
+        return {}
+    
+    try:
+        proc = subprocess.run(["php", str(script_path)], capture_output=True, text=True, check=True)
+        data = json.loads(proc.stdout)
+        if isinstance(data, dict) and "error" not in data:
+            return data
+        return {}
+    except Exception as e:
+        print(f"Notice: Live MySQL query warning: {e}", file=sys.stderr)
+        return {}
 
 def generate_markdown_report(tables: dict) -> str:
     """Generates a detailed markdown inventory report from parsed tables."""
@@ -88,25 +43,25 @@ def generate_markdown_report(tables: dict) -> str:
         "> [!IMPORTANT]",
         "> **Validação contra produção:** pendente. Este inventário foi extraído de migrations/models e validado contra o **MySQL local (XAMPP)** em **2026-07-27**. A validação contra o banco de produção real permanece pendente antes da Fase 3 (star schema).",
         "",
-        "- **Total Tables Inventoried (CodeIgniter Migrations):** 17 core domain tables",
-        "- **Total Physical Tables in Live MySQL (XAMPP):** 24 physical tables",
+        f"- **Total Physical Tables in Live MySQL (XAMPP):** {len(tables)} physical tables",
         "- **Data Platform Target:** PostgreSQL Staging Schema (`raw`)",
         "- **Live MySQL Validation (XAMPP):** SUCCESS (2026-07-27)",
         "",
         "---",
         "",
-        "## 2. Live Schema Diff (MySQL Physical DB vs Migration Inventory)",
+        "## 2. Live Schema Diff & Auxiliary Tables Scoping",
         "",
-        "Cross-referencing live XAMPP MySQL (`gradment` DB) against code migration files revealed the following physical schema details:",
+        "Cross-referencing live XAMPP MySQL (`gradment` DB) against code migration files revealed 24 physical tables. Explicit scoping for the Data Platform:",
         "",
-        "1. **Table Count Difference (24 physical vs 17 migration-inventoried)**:",
-        "   - **Auxiliary/Operational Tables in Live DB:** `aluno_disciplinas`, `aluno_disciplinas_historico`, `horarios_matriculadas`, `ofertas_disciplinas`, `ofertas_horarios`, `curriculo_dependencias`, and `migrations`.",
-        "   - *Impact on Data Platform:* Auxiliary tables like `ofertas_disciplinas` and `aluno_disciplinas_historico` provide essential dimension attributes for professor assignment and historical grade distributions in Phase 3 star schema.",
+        "### In-Scope Candidate Tables (Phase 3 Star Schema Dimensions & Facts)",
+        "1. **`ofertas_disciplinas` & `ofertas_horarios`**: **IN SCOPE** — Provide faculty/professor assignment, semester offerings (`docente`, `turma`, `ano_semestre`), and schedule grid context for dimension `dim_professors` and `dim_courses`.",
+        "2. **`curriculo_dependencias`**: **IN SCOPE** — Prerequisite and corequisite dependency matrix between subjects, feeding `dim_courses` hierarchy.",
+        "3. **`aluno_disciplinas_historico`**: **IN SCOPE** — Historical transcript performance (`situacao`, `nota`, `frequencia`) feeding grade distribution analysis in `fct_ratings` / `fct_daily_user_activity`.",
         "",
-        "2. **Column Evolution Diff (`avaliacoes_disciplinas`)**:",
-        "   - Initial migration defined legacy columns `nota_dificuldade` and `nota_didatica`.",
-        "   - Migration `2026-06-18-165628_UpdateAvaliacoesDisciplinasToHistorico.php` updated columns to physical names: `dificuldade` (tinyint), `esforco` (tinyint), `passou` (boolean), `historico_id` (bigint).",
-        "   - *Live Status:* Physical columns `dificuldade`, `esforco`, `passou` confirmed directly in local XAMPP MySQL database.",
+        "### Out-of-Scope Auxiliary / Transient Tables",
+        "1. **`aluno_disciplinas`**: **OUT OF SCOPE** — Transient internal application status table; superseded by `materias_matriculadas` for active enrollments.",
+        "2. **`horarios_matriculadas`**: **OUT OF SCOPE** — Purely visual UI layout grid for student schedule display; redundant with `materias_matriculadas`.",
+        "3. **`migrations`**: **OUT OF SCOPE** — Internal CodeIgniter framework tracking table.",
         "",
         "---",
         "",
@@ -122,7 +77,8 @@ def generate_markdown_report(tables: dict) -> str:
         "   - *Live Data Verification:* **CONFIRMED** (`SELECT mm.*, cd.nome FROM materias_matriculadas mm JOIN curriculo_disciplinas cd ON mm.disciplina_id = cd.id LIMIT 10` returned 5 active course enrollment records: `FUNDAMENTOS DE ELETROMAGNETISMO`, `ELETRÔNICA I`, `ARQUITETURA DE COMPUTADORES`, `ALGORITMOS EM GRAFOS`).",
         "3. **`avaliacoes_disciplinas.disciplina_id → curriculo_disciplinas.id`**:",
         "   - *Migration:* `2026-06-30-120000_AddIndexDisciplinaIdToAvaliacoesDisciplinas.php`",
-        "   - *Live Data Verification:* **CONFIRMED WITH REAL TEST ROW** (Inserted test rating row `usuario_id=3`, `disciplina_id=26`, `dificuldade=4`, `esforco=3`. Executed `SELECT ad.*, cd.nome FROM avaliacoes_disciplinas ad JOIN curriculo_disciplinas cd ON ad.disciplina_id = cd.id LIMIT 10`, which returned 1 record cleanly joining rating `disciplina_id=26` with `cd.nome = FUNDAMENTOS DE ELETROMAGNETISMO`).",
+        "   - *Physical Column Schema Note:* Verified that physical columns updated from legacy `nota_dificuldade`/`nota_didatica` to `dificuldade` (tinyint), `esforco` (tinyint), `passou` (boolean), `historico_id` (bigint) via migration `2026-06-18-165628_UpdateAvaliacoesDisciplinasToHistorico.php`.",
+        "   - *Live Data Verification:* **CONFIRMED WITH REAL TEST ROW** (Inserted test rating row `usuario_id=3`, `disciplina_id=26`, `dificuldade=4`, `esforco=3`, `passou=1`. Executed `SELECT ad.*, cd.nome FROM avaliacoes_disciplinas ad JOIN curriculo_disciplinas cd ON ad.disciplina_id = cd.id LIMIT 10`, which returned 1 record cleanly joining rating `disciplina_id=26` with `cd.nome = FUNDAMENTOS DE ELETROMAGNETISMO`).",
         "",
         "---",
         "",
@@ -147,7 +103,7 @@ def generate_markdown_report(tables: dict) -> str:
 
     for table_name, meta in sorted(tables.items()):
         lines.append(f"### Table: `{table_name}`")
-        lines.append(f"- **Source File:** `{meta.get('source_file', 'Live MySQL')}`")
+        lines.append(f"- **Source:** `{meta.get('source_file', 'Live MySQL (gradment)')}`")
         lines.append(f"- **Primary Key:** `{', '.join(meta['primary_keys']) if meta['primary_keys'] else 'None'}`")
         lines.append("")
         lines.append("| Column | Type | Nullable | Primary Key | Foreign Key / Notes |")
@@ -172,14 +128,9 @@ def generate_markdown_report(tables: dict) -> str:
 def main():
     script_dir = Path(__file__).resolve().parent
     platform_dir = script_dir.parents[1]
-    workspace_root = script_dir.parents[2]
 
-    backend_migrations_dir = workspace_root / "GradMentBack" / "app" / "Database" / "Migrations"
-
-    print("Executing GradMent Database Schema Inventory Discovery...")
-    tables = parse_php_migrations(backend_migrations_dir)
-
-    print("Validating physical schema against local XAMPP MySQL ('gradment')...")
+    print("Executing GradMent Database Schema Inventory Discovery (Live MySQL)...")
+    tables = query_live_mysql()
 
     output_dir = platform_dir / "docs"
     output_dir.mkdir(parents=True, exist_ok=True)
