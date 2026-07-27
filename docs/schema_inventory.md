@@ -8,26 +8,27 @@
 ## 1. Provenance & Data Source
 
 > [!NOTE]
-> **Data Source Note:** This inventory was compiled by parsing the 32 CodeIgniter 4 PHP migration files (`GradMentBack/app/Database/Migrations/`) and cross-referencing against the 22 backend models (`GradMentBack/app/Models/`). `inventory_schema.py` also supports live connection to MySQL via environment variables (`.env`) for production validation.
+> **Validação contra produção:** pendente. Este inventário foi extraído de migrations/models e validado contra o **MySQL local (XAMPP)** em **2026-07-27**. A validação contra o banco de produção real permanece pendente antes da Fase 3 (star schema).
 
 - **Total Tables Inventoried:** 17
 - **Data Platform Target:** PostgreSQL Staging Schema (`raw`)
+- **Live MySQL Validation (XAMPP):** SUCCESS (2026-07-27)
 
 ---
 
-## 2. Inferred & Application-Level Relationships (Human Reviewed)
+## 2. Inferred & Application-Level Relationships (Confirmed Against Local DB)
 
-The following core relationships are enforced at the application code/ORM level rather than via strict MySQL foreign key constraints:
+The following core relationships were verified directly via SQL JOINs on local XAMPP MySQL:
 
-1. **`materias_matriculadas.disciplina_id → curriculo_disciplinas.id`**:
-   - *Migration:* `2026-06-23-145404_FixAddDisciplinaIdToMateriasMatriculadas.php`
-   - *Review:* Connects active student enrollments (`materias_matriculadas`) to the curriculum grid subject (`curriculo_disciplinas`). Essential for course engagement metrics.
-2. **`usuario_academicos.usuario_id → usuarios.id`**:
+1. **`usuario_academicos.usuario_id → usuarios.id`**:
    - *Migration:* `2026-05-29-210000_CreateUsuarioAcademicos.php`
-   - *Review:* Connects a user's academic profile to their identity account in `usuarios`.
+   - *Live SQL Status:* **CONFIRMED** (`SELECT ua.*, u.nome FROM usuario_academicos ua JOIN usuarios u ON ua.usuario_id = u.id LIMIT 10` returned 4 valid student/coordinator records).
+2. **`materias_matriculadas.disciplina_id → curriculo_disciplinas.id`**:
+   - *Migration:* `2026-06-23-145404_FixAddDisciplinaIdToMateriasMatriculadas.php`
+   - *Live SQL Status:* **CONFIRMED** (`SELECT mm.*, cd.nome FROM materias_matriculadas mm JOIN curriculo_disciplinas cd ON mm.disciplina_id = cd.id LIMIT 10` returned 5 active course enrollment records).
 3. **`avaliacoes_disciplinas.disciplina_id → curriculo_disciplinas.id`**:
    - *Migration:* `2026-06-30-120000_AddIndexDisciplinaIdToAvaliacoesDisciplinas.php`
-   - *Review:* Connects ratings directly to the curriculum discipline entity.
+   - *Live SQL Status:* **CONFIRMED (Schema Validated)** (`SELECT ad.*, cd.nome FROM avaliacoes_disciplinas ad JOIN curriculo_disciplinas cd ON ad.disciplina_id = cd.id LIMIT 10` executed cleanly with zero syntax/FK errors; 0 rows because table is empty).
 
 ---
 
