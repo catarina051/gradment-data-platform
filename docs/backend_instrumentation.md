@@ -1,29 +1,31 @@
 # Phase 2 — Backend Event Instrumentation Guide
 
-**System:** GradMent Backend (CodeIgniter 4) → GradMent Data Platform  
-**Target Table:** `analytics_events` (Production MySQL)  
+**System:** Private GradMent Backend (`GradMentBack`) → Data Platform  
+**Target Table:** `analytics_events` (MySQL)  
 **Service Class:** `App\Services\EventCollector`  
-**Scope:** 18 Critical & High Priority Events (Medium/Low events remain as stubs in `events_catalog.yml`)  
+**Ingest Endpoint:** `POST /api/telemetry/event` (`App\Controllers\TelemetryController`)  
+**Scope:** 18 Critical & High Priority Events (16 backend-native + 2 client-side REST ingestion)  
 
 ---
 
-## 1. Architecture & Exception Safety Principle
+## 1. Architecture & Ingestion Strategy
 
-The backend instrumentation uses a **fire-and-forget, decoupled service architecture**:
+Phase 2 implements a dual-channel event emission architecture:
 
 ```
-Controller Action (e.g. AvaliacaoController::salvar)
-   ├── 1. Execute normal business logic (save rating to MySQL)
-   ├── 2. On SUCCESS only: EventCollector::track('discipline_rated', $payload)
-   │     ├── Normalizes 'docente' string fields (trim + space collapse)
-   │     ├── Generates UUID v4 event_id & session_id
-   │     ├── Wraps in try/catch block (swallows all exceptions, logs silently)
-   │     └── Writes 1 row to `analytics_events` table
-   └── 3. Return normal HTTP response to student
+[ Backend Controllers (CodeIgniter) ]
+   └── Native Events (Auth, Ratings, Downloads, Uploads, Errors)
+          └── EventCollector::track($name, $payload) ──> [ analytics_events (MySQL) ]
+
+[ Frontend Next.js Client ]
+   └── Client-Side Events (screen_viewed, frontend_error_occurred)
+          └── POST /api/telemetry/event (TelemetryController)
+                 └── EventCollector::track($name, $payload) ──> [ analytics_events (MySQL) ]
 ```
 
 > [!IMPORTANT]
-> **Exception Safety Guarantee:** `EventCollector::track()` is wrapped entirely in a `try/catch (\Throwable $e)` block. An error during event emission (e.g. database timeout or disk full) will **never** throw an exception into calling controller code or break the student's request.
+> **Client-Side Frontend Deferral Note:**
+> Client-side events (`screen_viewed` on SPA route transition and `frontend_error_occurred` on React Error Boundary) cannot originate inside PHP controller logic. In Phase 2, the REST API ingestion endpoint `POST /api/telemetry/event` (`TelemetryController`) was built in `GradMentBack` to receive these payloads. Complete Next.js client-side hook bindings are explicitly deferred to the frontend telemetry integration phase.
 
 ---
 
@@ -45,61 +47,52 @@ Full fuzzy matching and entity deduplication are performed downstream in Phase 3
 
 ---
 
-## 3. List of 18 Instrumented Events (Critical & High Priority)
+## 3. Complete Breakdown of All 18 Critical & High Events
 
-| Priority | Event Name | Category | Controller Hook Point | Key Payload Attributes |
+| Priority | Event Name | Category | Ingestion Channel / Controller Hook | Key Payload Attributes |
 |---|---|---|---|---|
-| **Critical** | `user_registered` | Auth & Reg | `RegisterController::create` | `university_id`, `course_id`, `registration_source` |
-| **Critical** | `login_succeeded` | Auth & Reg | `AuthController::login` (success) | `method` |
-| **Critical** | `login_failed` | Auth & Reg | `AuthController::login` (failed) | `method`, `failure_reason` |
-| **Critical** | `discipline_rated` | Ratings | `AvaliacaoController::salvar` | `discipline_id`, `docente`, `academic_period`, `oferta_id`, `dificuldade`, `esforco`, `passou` |
-| **Critical** | `professor_rated` | Ratings | `AvaliacaoController::avaliarDocente` | `docente`, `discipline_id`, `academic_period`, `didatica_score` |
-| **Critical** | `api_error_occurred` | Errors | `BaseController::handleException` | `error_code`, `endpoint`, `http_status` |
-| **Critical** | `frontend_error_occurred` | Errors | `TelemetryController::reportError` | `error_name`, `screen_name` |
-| **Critical** | `app_opened` | System | `InitController::bootstrap` | `is_cold_start`, `platform` |
-| **High** | `registration_failed` | Auth & Reg | `RegisterController::create` (fail) | `failure_reason` |
-| **High** | `screen_viewed` | Navigation | `NavigationController::trackView` | `screen_name`, `feature_key`, `referrer_screen` |
-| **High** | `search_performed` | Search | `SearchController::query` | `query_length`, `result_count`, `search_scope` |
-| **High** | `search_result_opened` | Search | `SearchController::openResult` | `search_scope`, `result_position` |
-| **High** | `material_downloaded` | Downloads | `MaterialController::download` | `material_type`, `course_id`, `docente`, `academic_period` |
-| **High** | `material_uploaded` | Uploads | `MaterialController::upload` (success)| `material_type`, `course_id`, `file_size_kb`, `academic_period` |
-| **High** | `upload_failed` | Uploads | `MaterialController::upload` (failed) | `material_type`, `failure_reason` |
-| **High** | `planning_session_started` | Planning | `PlanejamentoController::iniciar` | `academic_period` |
-| **High** | `planning_session_completed`| Planning | `PlanejamentoController::salvar` | `courses_planned`, `academic_period`, `had_conflicts_resolved` |
-| **High** | `validation_error_occurred` | Errors | `BaseController::onValidationError` | `form_name`, `failed_fields_count` |
+| **Critical** | `user_registered` | Auth & Reg | `AutenticacaoController::cadastro` | `university_id`, `course_id`, `registration_source` |
+| **Critical** | `login_succeeded` | Auth & Reg | `AutenticacaoController::login` (success) | `method` |
+| **Critical** | `login_failed` | Auth & Reg | `AutenticacaoController::login` (failed) | `method`, `failure_reason` |
+| **Critical** | `discipline_rated` | Ratings | `AvaliacaoDisciplinaController::criar` | `discipline_id`, `docente`, `academic_period`, `oferta_id`, `dificuldade`, `esforco`, `passou` |
+| **Critical** | `professor_rated` | Ratings | `AvaliacaoDisciplinaController::criar` | `docente`, `discipline_id`, `academic_period` |
+| **Critical** | `api_error_occurred` | Errors | `ApiResponseTrait::respondErroCatalogado` (5xx) | `error_code`, `endpoint`, `http_status` |
+| **Critical** | `frontend_error_occurred` | Errors | `POST /api/telemetry/event` (`TelemetryController`) | `error_name`, `screen_name` |
+| **Critical** | `app_opened` | System | `POST /api/telemetry/event` (`TelemetryController`) | `is_cold_start`, `platform` |
+| **High** | `registration_failed` | Auth & Reg | `AutenticacaoController::cadastro` (fail) | `failure_reason` |
+| **High** | `screen_viewed` | Navigation | `POST /api/telemetry/event` (`TelemetryController`) | `screen_name`, `feature_key`, `referrer_screen` |
+| **High** | `search_performed` | Search | `MateriaController::listar` | `query_length`, `result_count`, `search_scope` |
+| **High** | `search_result_opened` | Search | `MateriaController::exibir` | `search_scope`, `result_position` |
+| **High** | `material_downloaded` | Downloads | `MateriaArquivoController::obterLink` | `material_type`, `course_id`, `docente`, `academic_period` |
+| **High** | `material_uploaded` | Uploads | `MateriaArquivoController::criar` | `material_type`, `course_id`, `file_size_kb`, `academic_period` |
+| **High** | `upload_failed` | Uploads | `MateriaArquivoController::criar` (error) | `material_type`, `failure_reason` |
+| **High** | `planning_session_started` | Planning | `CurriculoController::exibir` | `academic_period` |
+| **High** | `planning_session_completed`| Planning | `CurriculoController::exibir` | `courses_planned`, `academic_period`, `had_conflicts_resolved` |
+| **High** | `validation_error_occurred` | Errors | `ApiResponseTrait::respondErroValidacao` | `form_name`, `failed_fields_count` |
 
 *(Note: The 21 Medium & Low priority events remain as valid TODO stubs in `events_catalog.yml` for future implementation).*
 
 ---
 
-## 4. CodeIgniter Controller Instrumentation Example
+## 4. REST Telemetry Ingest Controller Implementation (`GradMentBack`)
 
 ```php
+namespace App\Controllers;
+
 use App\Services\EventCollector;
 
-class AvaliacaoController extends BaseController
+class TelemetryController extends BaseController
 {
-    public function salvar()
+    public function receiveEvent()
     {
-        // 1. Business Logic
-        $model = new AvaliacaoDisciplinaModel();
-        $saved = $model->insert($data);
+        $data = $this->request->getJSON(true) ?? $this->request->getPost();
+        $eventName = (string) ($data['event_name'] ?? '');
+        $payload   = is_array($data['payload'] ?? null) ? $data['payload'] : [];
+        $sessionId = isset($data['session_id']) ? (string)$data['session_id'] : null;
+        $userId    = isset($this->request->usuarioId) ? (int)$this->request->usuarioId : null;
 
-        if ($saved) {
-            // 2. Event Emission (Non-blocking)
-            EventCollector::track('discipline_rated', [
-                'discipline_id'   => (int)$this->request->getPost('disciplina_id'),
-                'docente'         => $this->request->getPost('docente'), // Auto-normalized by EventCollector
-                'academic_period' => $this->request->getPost('ano_periodo') ?? '2026.1',
-                'oferta_id'       => $this->request->getPost('oferta_id') ? (int)$this->request->getPost('oferta_id') : null,
-                'dificuldade'     => (int)$this->request->getPost('dificuldade'),
-                'esforco'         => (int)$this->request->getPost('esforco'),
-                'passou'          => (bool)$this->request->getPost('passou'),
-                'has_comment'     => !empty($this->request->getPost('comentario')),
-            ]);
-
-            return $this->response->setJSON(['status' => 'success']);
-        }
+        $ok = EventCollector::track($eventName, $payload, $userId, $sessionId);
+        return $this->respondSucesso('Telemetry event recorded.', ['tracked' => $ok], 200);
     }
 }
 ```
@@ -108,8 +101,10 @@ class AvaliacaoController extends BaseController
 
 ## 5. Verification & Testing
 
-- Unit test suite: `backend/tests/unit/EventCollectorTest.php`
-- Run tests via PHPUnit:
-  ```bash
-  vendor/bin/phpunit backend/tests/unit/EventCollectorTest.php
+- Unit test suite in `GradMentBack`: `tests/unit/EventCollectorTest.php`
+- Real PHPUnit Test Run Output:
+  ```
+  PHPUnit 10.5.63 by Sebastian Bergmann and contributors.
+  Runtime:       PHP 8.2.12
+  Tests: 4, Assertions: 7, PHPUnit Warnings: 1.
   ```
