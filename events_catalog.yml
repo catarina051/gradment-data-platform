@@ -476,6 +476,16 @@ events:
       - Session Duration
     payload: {}
 
+  - event_name: feature_flag_evaluated
+    category: System
+    priority: Low
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Feature flag evaluated for user."
+    trigger: Feature flag evaluation logic.
+    metrics:
+      - Feature Adoption
+    payload: {}
+
   # =========================================================================
   # 12. ADMIN
   # =========================================================================
