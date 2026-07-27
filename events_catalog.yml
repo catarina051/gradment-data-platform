@@ -24,6 +24,18 @@ events:
       registration_source: { type: string, enum: ["web", "mobile"], description: "Client registration channel" }
       referral_code: { type: string, nullable: true, description: "Optional referral tracking code" }
 
+  - event_name: registration_failed
+    category: Authentication & Registration
+    priority: High
+    schema_version: 1
+    description: Fired when a registration attempt fails validation or creation.
+    trigger: Registration endpoint catches validation or database error.
+    metrics:
+      - Validation Errors
+      - API Error Rate
+    payload:
+      failure_reason: { type: string, description: "Failure classification (e.g. EMAIL_ALREADY_EXISTS)" }
+
   - event_name: login_succeeded
     category: Authentication & Registration
     priority: Critical
@@ -55,12 +67,41 @@ events:
     category: Authentication & Registration
     priority: Medium
     schema_version: 1
-    description: Fired when a user explicitly logs out of the session.
-    trigger: User clicks logout or revokes session token.
+    description: "TODO [Phase 2 Stub]: Fired when user logs out."
+    trigger: User clicks logout.
     metrics:
       - Session Duration
-    payload:
-      session_duration_seconds: { type: integer, description: "Total active session duration prior to logout" }
+    payload: {}
+
+  - event_name: password_reset_requested
+    category: Authentication & Registration
+    priority: Medium
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Password reset requested."
+    trigger: Password reset form submit.
+    metrics:
+      - API Error Rate
+    payload: {}
+
+  - event_name: password_reset_completed
+    category: Authentication & Registration
+    priority: Medium
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Password reset completed."
+    trigger: Password reset token redeemed.
+    metrics:
+      - API Error Rate
+    payload: {}
+
+  - event_name: session_expired
+    category: Authentication & Registration
+    priority: Low
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Session token expired."
+    trigger: Middleware detects token timeout.
+    metrics:
+      - Session Duration
+    payload: {}
 
   # =========================================================================
   # 2. NAVIGATION
@@ -73,12 +114,32 @@ events:
     trigger: Router navigation completes on frontend.
     metrics:
       - Feature Adoption
-      - Screen Abandonment
+      - Screen/Feature Abandonment
       - Navigation Flow
     payload:
       screen_name: { type: string, description: "Identifier of the rendered screen (e.g. course_planner)" }
       feature_key: { type: string, description: "Maps to dim_features module (e.g. planejamento, avaliacoes)" }
       referrer_screen: { type: string, nullable: true, description: "Previous screen name" }
+
+  - event_name: tab_changed
+    category: Navigation
+    priority: Low
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: In-page tab switched."
+    trigger: Tab click handler.
+    metrics:
+      - Feature Adoption
+    payload: {}
+
+  - event_name: deep_link_opened
+    category: Navigation
+    priority: Medium
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: App opened via deep link."
+    trigger: Deep link handler.
+    metrics:
+      - User Growth
+    payload: {}
 
   # =========================================================================
   # 3. SEARCH
@@ -110,6 +171,16 @@ events:
       search_scope: { type: string, enum: ["disciplines", "professors", "materials"], description: "Domain of opened item" }
       result_position: { type: integer, description: "1-indexed position rank of opened result card" }
 
+  - event_name: search_abandoned
+    category: Search
+    priority: Medium
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Search results shown but none opened."
+    trigger: Session moves away from search results without click.
+    metrics:
+      - Empty Search Rate
+    payload: {}
+
   # =========================================================================
   # 4. RATINGS (CONTENT GENERATION)
   # =========================================================================
@@ -125,7 +196,7 @@ events:
       - Activation Rate
     payload:
       discipline_id: { type: integer, description: "ID of the curriculo_disciplina evaluated" }
-      professor_id: { type: integer, nullable: true, description: "ID of the professor/docente from ofertas_disciplinas" }
+      docente: { type: string, nullable: true, description: "Faculty name string from ofertas_disciplinas.docente. dim_professors handles deduplication in Phase 3." }
       academic_period: { type: string, description: "Academic semester during which course was taken (e.g. 2026.1)" }
       oferta_id: { type: integer, nullable: true, description: "ID of the specific course offering (ofertas_disciplinas.id)" }
       dificuldade: { type: integer, description: "Perceived difficulty score (1 to 5)" }
@@ -143,10 +214,30 @@ events:
       - Ratings
       - Professors Ranked
     payload:
-      professor_id: { type: integer, description: "ID of the professor evaluated (dim_professors)" }
+      docente: { type: string, description: "Faculty name string from ofertas_disciplinas.docente. dim_professors handles deduplication in Phase 3." }
       discipline_id: { type: integer, description: "ID of the subject taught" }
       academic_period: { type: string, description: "Academic semester (e.g. 2026.1)" }
       didatica_score: { type: integer, description: "Teaching clarity score (1 to 5)" }
+
+  - event_name: rating_edited
+    category: Ratings
+    priority: Medium
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Existing rating updated."
+    trigger: Rating update controller action.
+    metrics:
+      - Ratings
+    payload: {}
+
+  - event_name: rating_deleted
+    category: Ratings
+    priority: Low
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Rating removed."
+    trigger: Rating delete action.
+    metrics:
+      - Ratings
+    payload: {}
 
   # =========================================================================
   # 5. DOWNLOADS (CONTENT CONSUMPTION)
@@ -163,8 +254,18 @@ events:
     payload:
       material_type: { type: string, enum: ["study_material", "past_exam"], description: "Category of material" }
       course_id: { type: integer, description: "Associated curriculo_disciplina ID" }
-      professor_id: { type: integer, nullable: true, description: "Associated professor/docente ID" }
+      docente: { type: string, nullable: true, description: "Associated faculty name string" }
       academic_period: { type: string, nullable: true, description: "Semester period of the material (e.g. 2025.2)" }
+
+  - event_name: download_failed
+    category: Downloads
+    priority: Medium
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Download attempt failed."
+    trigger: File stream exception.
+    metrics:
+      - API Error Rate
+    payload: {}
 
   # =========================================================================
   # 6. UPLOADS (CONTENT CONTRIBUTION)
@@ -208,7 +309,7 @@ events:
     trigger: Planning wizard UI initialized.
     metrics:
       - Feature Adoption
-      - Screen Abandonment
+      - Screen/Feature Abandonment
     payload:
       academic_period: { type: string, description: "Target planning semester (e.g. 2026.2)" }
 
@@ -226,6 +327,26 @@ events:
       academic_period: { type: string, description: "Target planning semester (e.g. 2026.2)" }
       had_conflicts_resolved: { type: boolean, description: "True if student resolved schedule time overlaps" }
 
+  - event_name: course_added_to_plan
+    category: Planning
+    priority: Medium
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Course added during planning session."
+    trigger: Course select action.
+    metrics:
+      - Feature Adoption
+    payload: {}
+
+  - event_name: course_removed_from_plan
+    category: Planning
+    priority: Low
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Course removed during planning."
+    trigger: Course deselect action.
+    metrics:
+      - Feature Adoption
+    payload: {}
+
   # =========================================================================
   # 8. FAVORITES
   # =========================================================================
@@ -242,6 +363,16 @@ events:
       target_type: { type: string, enum: ["discipline", "professor", "material"], description: "Type of entity favorited" }
       target_id: { type: integer, description: "ID of favorited entity" }
 
+  - event_name: item_unfavorited
+    category: Favorites
+    priority: Low
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Favorite removed."
+    trigger: Favorite toggle OFF.
+    metrics:
+      - Feature Adoption
+    payload: {}
+
   # =========================================================================
   # 9. NOTIFICATIONS
   # =========================================================================
@@ -256,6 +387,26 @@ events:
     payload:
       notification_type: { type: string, description: "Category of notification (e.g. NEW_MATERIAL_AVAILABLE)" }
       time_to_open_seconds: { type: integer, description: "Seconds elapsed between dispatch and open" }
+
+  - event_name: notification_sent
+    category: Notifications
+    priority: Medium
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Notification dispatched."
+    trigger: Notification queue processor.
+    metrics:
+      - Re-engagement Rate
+    payload: {}
+
+  - event_name: notification_dismissed
+    category: Notifications
+    priority: Low
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Notification dismissed."
+    trigger: Swipe/dismiss button.
+    metrics:
+      - Re-engagement Rate
+    payload: {}
 
   # =========================================================================
   # 10. ERRORS & QUALITY
@@ -285,6 +436,18 @@ events:
       error_name: { type: string, description: "JS error name (e.g. TypeError)" }
       screen_name: { type: string, description: "Screen active when error occurred" }
 
+  - event_name: validation_error_occurred
+    category: Errors
+    priority: High
+    schema_version: 1
+    description: Fired when form/input validation fails.
+    trigger: Form submit validation failure handler.
+    metrics:
+      - Validation Errors
+    payload:
+      form_name: { type: string, description: "Identifier of form (e.g. rating_form)" }
+      failed_fields_count: { type: integer, description: "Count of fields failing validation" }
+
   # =========================================================================
   # 11. SYSTEM & SESSIONS
   # =========================================================================
@@ -303,6 +466,16 @@ events:
       is_cold_start: { type: boolean, description: "True if fresh app launch" }
       platform: { type: string, enum: ["web", "mobile_ios", "mobile_android"], description: "Client platform" }
 
+  - event_name: app_backgrounded
+    category: System
+    priority: Low
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Mobile app backgrounded."
+    trigger: App state change.
+    metrics:
+      - Session Duration
+    payload: {}
+
   # =========================================================================
   # 12. ADMIN
   # =========================================================================
@@ -317,3 +490,13 @@ events:
     payload:
       action_type: { type: string, enum: ["content_removed", "user_role_changed", "content_approved"], description: "Action type" }
       target_type: { type: string, description: "Target entity type" }
+
+  - event_name: content_moderated
+    category: Admin
+    priority: Low
+    schema_version: 1
+    description: "TODO [Phase 2 Stub]: Content moderated."
+    trigger: Moderation approval/rejection.
+    metrics:
+      - Admin Audit Trail
+    payload: {}

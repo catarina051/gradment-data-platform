@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 GradMent Data Platform — Events Catalog Validation Script
-Validates events_catalog.yml against contract rules, payload data types, and envelope JSON schema.
-Built using standard library Python to ensure zero external dependency failures.
+Validates events_catalog.yml against contract rules, payload data types, envelope JSON schema,
+and Section 19 Metrics Catalog cross-references.
 """
 
 import sys
@@ -27,10 +27,34 @@ ALLOWED_CATEGORIES = {
 }
 ALLOWED_TYPES = {"integer", "string", "boolean", "number", "array", "object"}
 
+# Section 19 Metrics Catalog
+CATALOG_METRICS = {
+    # Acquisition
+    "Total Users", "New Users", "Returning Users", "User Growth", "Registration Rate", "University Growth", "Course Growth",
+    # Activation
+    "Activation Rate", "Time to Activation", "First Rating", "First Upload", "First Session Completion",
+    # Retention
+    "D1 / D7 / D14 / D30 Retention", "WAU", "MAU", "Cohort Retention Table", "Rolling Retention",
+    # Engagement
+    "DAU", "WAU / MAU", "Stickiness", "Session Duration", "Sessions per User", "Feature Adoption", "Bounce Rate", "Power Users", "Dormant Users",
+    # Content
+    "Ratings", "Downloads", "Uploads", "Searches", "Search Success Rate", "Empty Search Rate", "Professors Ranked", "Courses Ranked",
+    # Product
+    "Funnel Conversion", "Screen/Feature Abandonment", "Most / Least Used Features", "Navigation Flow",
+    # Quality
+    "API Error Rate", "Frontend Error Rate", "Upload Failures", "Login Failures", "Validation Errors", "Response Time",
+    # Data Engineering
+    "Pipeline Runtime", "Pipeline Success Rate", "ETL Duration by Stage", "Event Volume", "Data Freshness", "Duplicate Events", "Missing/Late Events", "Warehouse Growth",
+    # Monetization / Secondary
+    "Power-User Concentration", "High-Value Feature Usage", "Institutional Concentration", "Willingness-to-Engage Proxy", "Admin Audit Trail", "Re-engagement Rate", "Login Failure Rate"
+}
+
 def parse_events_yml(yml_content: str) -> list:
-    """Simple standard-library YAML parser for events_catalog.yml format."""
+    """Standard-library parser for events_catalog.yml structure."""
     events = []
     current_event = None
+    in_metrics = False
+    in_payload = False
 
     for line in yml_content.splitlines():
         line_str = line.strip()
@@ -43,20 +67,36 @@ def parse_events_yml(yml_content: str) -> list:
             event_name = line_str.split(":", 1)[1].strip()
             current_event = {
                 "event_name": event_name,
+                "metrics": [],
                 "payload": {}
             }
+            in_metrics = False
+            in_payload = False
         elif current_event:
-            if ":" in line_str:
+            if line_str == "metrics:":
+                in_metrics = True
+                in_payload = False
+                continue
+            elif line_str == "payload:":
+                in_metrics = False
+                in_payload = True
+                continue
+
+            if in_metrics and line_str.startswith("- "):
+                metric_name = line_str[2:].strip().strip("'\"")
+                current_event["metrics"].append(metric_name)
+            elif ":" in line_str:
                 key, val = [part.strip() for part in line_str.split(":", 1)]
                 if key in ["category", "priority", "description", "trigger"]:
                     current_event[key] = val
+                    in_metrics = False
                 elif key == "schema_version":
                     try:
                         current_event[key] = int(val)
                     except ValueError:
                         current_event[key] = val
-                elif "type:" in val:
-                    # Payload field attribute
+                    in_metrics = False
+                elif in_payload and "type:" in val:
                     type_match = re.search(r"type:\s*([a-z]+)", val)
                     if type_match:
                         field_type = type_match.group(1)
@@ -96,10 +136,10 @@ def validate_catalog(catalog_path: Path, envelope_path: Path) -> bool:
         print(f"Error parsing events_catalog.yml: {e}", file=sys.stderr)
         return False
 
-    print(f"Found {len(events)} event definitions in catalog.")
-
     errors = []
     seen_names = set()
+    metrics_resolved = 0
+    priority_counts = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0}
 
     for idx, ev in enumerate(events, 1):
         name = ev.get("event_name")
@@ -118,10 +158,20 @@ def validate_catalog(catalog_path: Path, envelope_path: Path) -> bool:
         priority = ev.get("priority")
         if priority not in ALLOWED_PRIORITIES:
             errors.append(f"Event '{name}': invalid priority '{priority}'. Must be one of {ALLOWED_PRIORITIES}")
+        else:
+            priority_counts[priority] += 1
 
         schema_ver = ev.get("schema_version")
         if not isinstance(schema_ver, int) or schema_ver < 1:
             errors.append(f"Event '{name}': invalid schema_version '{schema_ver}'. Must be an integer >= 1.")
+
+        # Metric references check against Section 19 Catalog
+        event_metrics = ev.get("metrics", [])
+        for m in event_metrics:
+            if m in CATALOG_METRICS:
+                metrics_resolved += 1
+            else:
+                errors.append(f"Event '{name}': referenced metric '{m}' not found in Section 19 Metrics Catalog.")
 
         payload = ev.get("payload", {})
         if not payload and priority in {"Critical", "High"}:
@@ -137,8 +187,11 @@ def validate_catalog(catalog_path: Path, envelope_path: Path) -> bool:
             print(f"  - {err}", file=sys.stderr)
         return False
 
-    print("\n[SUCCESS] Event Catalog Validation PASSED successfully!")
-    print(f"   Total Events Validated: {len(seen_names)}")
+    print(f"  - Duplicate event names check: 0 duplicate names found (Total events: {len(seen_names)})")
+    print(f"  - Priority breakdown: {priority_counts['Critical']} Critical | {priority_counts['High']} High | {priority_counts['Medium']} Medium | {priority_counts['Low']} Low (TODO Stubs)")
+    print(f"  - Metrics Catalog cross-reference: {metrics_resolved} metric references resolved 100% against Section 19 Catalog")
+    print(f"  - Payload types check: 0 invalid payload types")
+    print("\n[SUCCESS] Event Catalog Contract Validation PASSED 100% successfully!")
     return True
 
 def main():
