@@ -24,9 +24,8 @@ Phase 2 implements a dual-channel event emission architecture:
 ```
 
 > [!IMPORTANT]
-> **Practical Consequence & Phase 2.5 Integration Note:**
-> Client-side events (`app_opened` for session anchor, `screen_viewed` on SPA route transition, and `frontend_error_occurred` on React Error Boundary) cannot originate inside PHP controller logic. In Phase 2, the REST API ingestion endpoint `POST /api/telemetry/event` (`TelemetryController`) was built in `GradMentBack` to receive these payloads.
-> Until **Phase 2.5 (Frontend Telemetry Integration)** is executed to wire `gradment_front` (Next.js) to this endpoint, `analytics_events` will not receive live client-side session anchor rows (`app_opened`). Phase 2.5 is formally scheduled as the next phase to complete this client-to-backend bridge.
+> **Client-Side Telemetry Ingestion (RESOLVED in Phase 2.5):**
+> Client-side events (`app_opened` for session anchor, `screen_viewed` on SPA route transition, and `frontend_error_occurred` on React Error Boundary) are received by `TelemetryController` via `POST /api/telemetry/event`. In Phase 2.5, `gradment_front` (Next.js) was fully instrumented with `src/lib/telemetry.ts` and `<TelemetryListener />`, connecting live client-side telemetry to `analytics_events`.
 
 ---
 
