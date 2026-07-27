@@ -57,7 +57,7 @@ This platform operates on a **Two-Lane Principle**:
 - [x] **Phase 0: Database Discovery** ([docs/schema_inventory.md](docs/schema_inventory.md) & [docs/erd.md](docs/erd.md))
 - [x] **Phase 1: Event Collection Architecture** ([events_catalog.yml](events_catalog.yml) & [schemas/event_envelope.schema.json](schemas/event_envelope.schema.json))
 - [x] **Phase 2: Backend Instrumentation** ([docs/backend_instrumentation.md](docs/backend_instrumentation.md))
-- [ ] **Phase 2.5: Frontend Telemetry Integration**
+- [x] **Phase 2.5: Frontend Telemetry Integration** ([docs/frontend_telemetry.md](docs/frontend_telemetry.md))
 - [ ] **Phase 3: Analytical Database Design**
 - [ ] **Phase 4: ETL/ELT Pipeline**
 - [ ] **Phase 5: Data Quality**

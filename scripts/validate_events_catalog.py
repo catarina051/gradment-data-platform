@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-GradMent Data Platform — Events Catalog Validation Script
+GradMent Data Platform — Events Catalog & Envelope Contract Validation Script
 Validates events_catalog.yml against contract rules, payload data types, envelope JSON schema,
-and Section 19 Metrics Catalog cross-references.
+UUID v4 session_id format constraints, and Section 19 Metrics Catalog cross-references.
 """
 
 import sys
@@ -26,6 +26,7 @@ ALLOWED_CATEGORIES = {
     "Admin"
 }
 ALLOWED_TYPES = {"integer", "string", "boolean", "number", "array", "object"}
+UUID_REGEX = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", re.IGNORECASE)
 
 # Section 19 Metrics Catalog
 CATALOG_METRICS = {
@@ -119,11 +120,15 @@ def validate_catalog(catalog_path: Path, envelope_path: Path) -> bool:
         print(f"Error: Envelope schema file not found at {envelope_path}", file=sys.stderr)
         return False
 
-    # 1. Validate Envelope JSON Schema
+    # 1. Validate Envelope JSON Schema syntax & format rules
     try:
         envelope_content = envelope_path.read_text(encoding="utf-8")
-        json.loads(envelope_content)
-        print("  - Envelope JSON Schema syntax: OK")
+        envelope_schema = json.loads(envelope_content)
+        session_format = envelope_schema.get("properties", {}).get("session_id", {}).get("format")
+        if session_format != "uuid":
+            print(f"Error: session_id in envelope schema must specify format 'uuid'. Found: '{session_format}'", file=sys.stderr)
+            return False
+        print("  - Envelope JSON Schema syntax & session_id UUID format constraint: OK")
     except Exception as e:
         print(f"Error parsing envelope JSON schema: {e}", file=sys.stderr)
         return False
