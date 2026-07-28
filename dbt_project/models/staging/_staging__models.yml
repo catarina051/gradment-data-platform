@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: stg_analytics_events
+    description: "Staging view extracting typed raw telemetry events."
+    columns:
+      - name: raw_event_id
+        description: "Primary natural key of raw event."
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+
+      - name: category
+        description: "Event category (1 of 12 catalog categories)."
+        tests:
+          - not_null:
+              severity: error
+
+      - name: priority
+        description: "Event priority level."
+        tests:
+          - not_null:
+              severity: error
+          - accepted_values:
+              values: ['Critical', 'High', 'Medium', 'Low']
+              severity: error
+
+      - name: platform
+        description: "Client application platform."
+        tests:
+          - not_null:
+              severity: error
+          - accepted_values:
+              values: ['web', 'mobile']
+              severity: error
+
+  - name: stg_operational_tables
+    description: "Staging view extracting operational database entities."
+    columns:
+      - name: user_id
+        description: "Operational user ID."
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error

@@ -1,0 +1,298 @@
+version: 2
+
+models:
+  # ---------------------------------------------------------------------------
+  # 1. FACT TABLES
+  # ---------------------------------------------------------------------------
+  - name: fct_events
+    description: "Atomic event fact table (grain = 1 row per event)."
+    columns:
+      - name: event_sk
+        description: "Primary surrogate key."
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+
+      - name: event_date_sk
+        description: "Foreign key to dim_date (FK 1)."
+        tests:
+          - not_null:
+              severity: error
+          - relationships:
+              to: ref('dim_date')
+              field: date_sk
+              severity: error
+
+      - name: user_sk
+        description: "Foreign key to dim_users (FK 2)."
+        tests:
+          - not_null:
+              severity: error
+          - relationships:
+              to: ref('dim_users')
+              field: user_sk
+              severity: error
+
+      - name: screen_sk
+        description: "Foreign key to dim_screens (FK 3)."
+        tests:
+          - relationships:
+              to: ref('dim_screens')
+              field: screen_sk
+              severity: error
+
+      - name: course_sk
+        description: "Foreign key to dim_courses (FK 4)."
+        tests:
+          - relationships:
+              to: ref('dim_courses')
+              field: course_sk
+              severity: error
+
+      - name: professor_sk
+        description: "Foreign key to dim_professors (FK 5)."
+        tests:
+          - relationships:
+              to: ref('dim_professors')
+              field: professor_sk
+              severity: error
+
+      - name: period_sk
+        description: "Foreign key to dim_academic_periods (FK 6)."
+        tests:
+          - relationships:
+              to: ref('dim_academic_periods')
+              field: period_sk
+              severity: error
+
+      - name: category
+        description: "Event category."
+        tests:
+          - not_null:
+              severity: error
+          - accepted_values:
+              values: ['Auth', 'Navigation', 'Search', 'Ratings', 'Downloads', 'Uploads', 'Planning', 'Favorites', 'Notifications', 'Errors', 'System', 'Admin']
+              severity: error
+
+      - name: platform
+        description: "Client platform."
+        tests:
+          - not_null:
+              severity: error
+          - accepted_values:
+              values: ['web', 'mobile']
+              severity: error
+
+  - name: fct_daily_user_activity
+    description: "Daily retention & engagement rollup per user."
+    columns:
+      - name: daily_activity_sk
+        description: "Primary surrogate key."
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+
+      - name: date_sk
+        description: "Foreign key to dim_date (FK 7)."
+        tests:
+          - not_null:
+              severity: error
+          - relationships:
+              to: ref('dim_date')
+              field: date_sk
+              severity: error
+
+      - name: user_sk
+        description: "Foreign key to dim_users (FK 8)."
+        tests:
+          - not_null:
+              severity: error
+          - relationships:
+              to: ref('dim_users')
+              field: user_sk
+              severity: error
+
+      - name: university_sk
+        description: "Foreign key to dim_universities (FK 9)."
+        tests:
+          - not_null:
+              severity: error
+          - relationships:
+              to: ref('dim_universities')
+              field: university_sk
+              severity: error
+
+  - name: fct_ratings
+    description: "Specialized academic evaluation fact table."
+    columns:
+      - name: rating_sk
+        description: "Primary surrogate key."
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+
+      - name: date_sk
+        description: "Foreign key to dim_date (FK 10)."
+        tests:
+          - not_null:
+              severity: error
+          - relationships:
+              to: ref('dim_date')
+              field: date_sk
+              severity: error
+
+      - name: user_sk
+        description: "Foreign key to dim_users (FK 11)."
+        tests:
+          - not_null:
+              severity: error
+          - relationships:
+              to: ref('dim_users')
+              field: user_sk
+              severity: error
+
+      - name: course_sk
+        description: "Foreign key to dim_courses (FK 12)."
+        tests:
+          - not_null:
+              severity: error
+          - relationships:
+              to: ref('dim_courses')
+              field: course_sk
+              severity: error
+
+      - name: professor_sk
+        description: "Foreign key to dim_professors (FK 13)."
+        tests:
+          - relationships:
+              to: ref('dim_professors')
+              field: professor_sk
+              severity: error
+
+      - name: period_sk
+        description: "Foreign key to dim_academic_periods (FK 14)."
+        tests:
+          - not_null:
+              severity: error
+          - relationships:
+              to: ref('dim_academic_periods')
+              field: period_sk
+              severity: error
+
+  - name: fct_sessions
+    description: "Derived user session rollup."
+    columns:
+      - name: session_sk
+        description: "Primary surrogate key."
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+
+      - name: session_start_date_sk
+        description: "Foreign key to dim_date (FK 15)."
+        tests:
+          - not_null:
+              severity: error
+          - relationships:
+              to: ref('dim_date')
+              field: date_sk
+              severity: error
+
+      - name: user_sk
+        description: "Foreign key to dim_users (FK 16)."
+        tests:
+          - not_null:
+              severity: error
+          - relationships:
+              to: ref('dim_users')
+              field: user_sk
+              severity: error
+
+  # ---------------------------------------------------------------------------
+  # 2. DIMENSION TABLES
+  # ---------------------------------------------------------------------------
+  - name: dim_users
+    description: "User profile dimension (SCD Type 2)."
+    columns:
+      - name: user_sk
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+      - name: role
+        tests:
+          - not_null:
+              severity: error
+          - accepted_values:
+              values: ['Aluno', 'Coordenador', 'Admin']
+              severity: error
+      - name: status
+        tests:
+          - not_null:
+              severity: error
+          - accepted_values:
+              values: ['ativo', 'inativo', 'pendente']
+              severity: error
+
+  - name: dim_professors
+    columns:
+      - name: professor_sk
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+
+  - name: dim_courses
+    columns:
+      - name: course_sk
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+
+  - name: dim_universities
+    columns:
+      - name: university_sk
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+
+  - name: dim_academic_periods
+    columns:
+      - name: period_sk
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+
+  - name: dim_date
+    columns:
+      - name: date_sk
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+
+  - name: dim_screens
+    columns:
+      - name: screen_sk
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error

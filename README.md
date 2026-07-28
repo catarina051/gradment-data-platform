@@ -60,7 +60,7 @@ This platform operates on a **Two-Lane Principle**:
 - [x] **Phase 2.5: Frontend Telemetry Integration** ([docs/frontend_telemetry.md](docs/frontend_telemetry.md))
 - [x] **Phase 3: Analytical Database Design** ([docs/star_schema.md](docs/star_schema.md), [warehouse/schema.sql](warehouse/schema.sql), [docs/analytical_erd.md](docs/analytical_erd.md))
 - [x] **Phase 4: ETL/ELT Pipeline** ([extract/](extract/), [dags/](dags/), [.github/workflows/phase4_ci.yml](.github/workflows/phase4_ci.yml))
-- [ ] **Phase 5: Data Quality**
+- [x] **Phase 5: Data Quality** ([dbt_project/models/](dbt_project/models/), [dbt_project/tests/singular/](dbt_project/tests/singular/), [scripts/check_schema_drift.py](scripts/check_schema_drift.py), [.github/workflows/phase5_ci.yml](.github/workflows/phase5_ci.yml))
 - [ ] **Phase 6: Data Warehouse**
 - [ ] **Phase 7: Metrics Catalog**
 - [ ] **Phase 8: Dashboards**
@@ -73,8 +73,9 @@ This platform operates on a **Two-Lane Principle**:
 
 ```
 gradment-data-platform/
-├── .github/workflows/         # CI/CD workflows for automated pipeline validation
-│   └── phase4_ci.yml
+├── .github/workflows/         # CI/CD workflows for automated pipeline & quality validation
+│   ├── phase4_ci.yml
+│   └── phase5_ci.yml
 ├── docs/                      # Architectural design, star schema spec, ERD, discovery docs
 │   ├── star_schema.md
 │   ├── analytical_erd.md
@@ -86,7 +87,8 @@ gradment-data-platform/
 │   ├── extract_events.py
 │   ├── extract_reference_tables.py
 │   ├── watermark.py
-│   └── partition_manager.py
+│   ├── partition_manager.py
+│   └── audit.py
 ├── dags/                      # Airflow DAG orchestrations (Synthetic, Real, Quality)
 │   ├── extract_transform_synthetic.py
 │   ├── extract_transform_real.py
@@ -94,13 +96,22 @@ gradment-data-platform/
 ├── warehouse/                 # ANSI SQL DDL statements and database schema definitions
 │   ├── schema.sql
 │   └── pipeline_audit.sql
-├── dbt_project/               # dbt transformation models (staging, core marts, snapshots)
+├── dbt_project/               # dbt transformation models (staging, core marts, snapshots, quality tests)
+│   ├── models/staging/_staging__models.yml
+│   ├── models/marts/core/_core__models.yml
+│   └── tests/singular/
+│       ├── assert_session_duration_non_negative.sql
+│       ├── assert_rating_scores_valid.sql
+│       ├── assert_event_ts_not_in_future.sql
+│       └── assert_fct_events_no_duplicates.sql
 ├── scripts/                   # Synthetic seed generator, schema & pipeline validation scripts
 │   ├── synthetic/generate_seeds.py
 │   ├── validate_events_catalog.py
 │   ├── validate_star_schema.py
 │   ├── test_postgres_execution_and_pruning.py
-│   └── validate_phase4_pipeline.py
+│   ├── validate_phase4_pipeline.py
+│   ├── check_schema_drift.py
+│   └── validate_phase5_quality.py
 ├── events_catalog.yml         # Phase 1 39-event catalog specification contract
 ├── schemas/                   # JSON Schema envelope validators
 ├── docker-compose.yml         # Containerized Airflow + PostgreSQL deployment stack
