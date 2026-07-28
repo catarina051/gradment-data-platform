@@ -58,7 +58,7 @@ This platform operates on a **Two-Lane Principle**:
 - [x] **Phase 1: Event Collection Architecture** ([events_catalog.yml](events_catalog.yml) & [schemas/event_envelope.schema.json](schemas/event_envelope.schema.json))
 - [x] **Phase 2: Backend Instrumentation** ([docs/backend_instrumentation.md](docs/backend_instrumentation.md))
 - [x] **Phase 2.5: Frontend Telemetry Integration** ([docs/frontend_telemetry.md](docs/frontend_telemetry.md))
-- [ ] **Phase 3: Analytical Database Design**
+- [x] **Phase 3: Analytical Database Design** ([docs/star_schema.md](docs/star_schema.md), [warehouse/schema.sql](warehouse/schema.sql), [docs/analytical_erd.md](docs/analytical_erd.md))
 - [ ] **Phase 4: ETL/ELT Pipeline**
 - [ ] **Phase 5: Data Quality**
 - [ ] **Phase 6: Data Warehouse**
@@ -73,12 +73,21 @@ This platform operates on a **Two-Lane Principle**:
 
 ```
 gradment-data-platform/
-├── docs/                      # Architectural design, product discovery, schemas, and ADRs
-│   └── product_discovery.md
-├── scripts/                   # Data discovery, extraction, and utility scripts
-├── dbt/                       # dbt project (models, seeds, tests, docs)
-├── airflow/                   # Airflow DAGs and plugins
-├── tests/                     # Unit, integration, and data validation tests
+├── docs/                      # Architectural design, star schema spec, ERD, discovery docs
+│   ├── star_schema.md
+│   ├── analytical_erd.md
+│   ├── product_discovery.md
+│   ├── schema_inventory.md
+│   ├── backend_instrumentation.md
+│   └── frontend_telemetry.md
+├── warehouse/                 # ANSI SQL DDL statements and database schema definitions
+│   └── schema.sql
+├── dbt_project/               # dbt transformation models (staging, core marts, snapshots)
+├── scripts/                   # Data discovery, schema validation, utility scripts
+│   ├── validate_events_catalog.py
+│   └── validate_star_schema.py
+├── events_catalog.yml         # Phase 1 39-event catalog specification contract
+├── schemas/                   # JSON Schema envelope validators
 ├── .gitignore
 └── README.md
 ```

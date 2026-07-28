@@ -1,0 +1,39 @@
+name: 'gradment_data_platform'
+version: '1.0.0'
+config-version: 2
+
+profile: 'gradment_dw'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  gradment_data_platform:
+    staging:
+      +materialized: view
+    marts:
+      core:
+        +materialized: table
+        fct_events:
+          +materialized: incremental
+          +unique_key: 'event_id'
+        fct_daily_user_activity:
+          +materialized: incremental
+          +unique_key: ['date_sk', 'user_sk']
+        fct_ratings:
+          +materialized: incremental
+          +unique_key: 'rating_id'
+        fct_sessions:
+          +materialized: incremental
+          +unique_key: 'session_id'
+        dim_users:
+          +materialized: table
