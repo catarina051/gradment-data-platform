@@ -64,8 +64,9 @@ def populate_scaled_test_data(conn, days_count=180):
                 curr_dt.weekday() >= 5
             ))
 
-            # Populate daily user activity for users on each date
-            for u in range(1, 51): # 50 active users per day
+            # Populate daily user activity for users on each date (rotating user groups)
+            user_offset = (d % 4) * 50
+            for u in range(1 + user_offset, 51 + user_offset): # 50 active users per day, 200 distinct users across 4 days
                 act_sk = date_sk * 1000 + u
                 cur.execute("""
                     INSERT INTO fct_daily_user_activity (

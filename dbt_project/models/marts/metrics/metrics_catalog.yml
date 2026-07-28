@@ -1,0 +1,206 @@
+version: 2
+
+metrics:
+  # 19.1 Acquisition Metrics
+  - name: total_users
+    description: "All-time registered users in dim_users"
+    type: count
+    model: ref('dim_users')
+  - name: new_users
+    description: "Users who registered within the period"
+    type: count
+    model: ref('dim_users')
+  - name: returning_users
+    description: "Users active in period who registered before period start"
+    type: count_distinct
+    model: ref('fct_daily_user_activity')
+  - name: user_growth
+    description: "Percentage change in total users period-over-period"
+    type: derived
+  - name: registration_rate
+    description: "Share of unauthenticated sessions completing registration"
+    type: derived
+  - name: university_growth
+    description: "New universities with at least one active user"
+    type: count_distinct
+    model: ref('dim_universities')
+  - name: course_growth
+    description: "New courses with at least one rating or usage event"
+    type: count_distinct
+    model: ref('dim_courses')
+
+  # 19.2 Activation Metrics
+  - name: activation_rate
+    description: "Share of new users completing activation event within 7 days"
+    type: derived
+  - name: time_to_activation
+    description: "Median time between registration and activating event"
+    type: derived
+  - name: first_rating
+    description: "Share of new users whose first action was a rating"
+    type: derived
+  - name: first_upload
+    description: "Share of new users whose first action was an upload"
+    type: derived
+  - name: first_session_completion
+    description: "Share of new users completing first session without abandonment"
+    type: derived
+
+  # 19.3 Retention Metrics
+  - name: d1_d7_d14_d30_retention
+    description: "Share of registration cohort active N days after registration"
+    type: derived
+  - name: wau
+    description: "Weekly Active Users (trailing 7 days)"
+    type: count_distinct
+    model: ref('fct_daily_user_activity')
+  - name: mau
+    description: "Monthly Active Users (trailing 30 days)"
+    type: count_distinct
+    model: ref('fct_daily_user_activity')
+  - name: cohort_retention_table
+    description: "Cohort-by-week retention matrix"
+    type: derived
+  - name: rolling_retention
+    description: "Share of cohort active in any later period"
+    type: derived
+
+  # 19.4 Engagement Metrics
+  - name: dau
+    description: "Daily Active Users"
+    type: count_distinct
+    model: ref('fct_daily_user_activity')
+  - name: wau_mau
+    description: "WAU / MAU ratio"
+    type: derived
+  - name: stickiness
+    description: "DAU / MAU ratio"
+    type: derived
+  - name: session_duration
+    description: "Median and P90 session duration in seconds"
+    type: derived
+  - name: sessions_per_user
+    description: "Average sessions per active user"
+    type: derived
+  - name: feature_adoption
+    description: "Share of active users using a feature"
+    type: derived
+  - name: bounce_rate
+    description: "Share of sessions with only 1 event"
+    type: derived
+  - name: power_users
+    description: "Users in top decile of session frequency"
+    type: count_distinct
+    model: ref('fct_sessions')
+  - name: dormant_users
+    description: "Previously active users with no activity in 30 days"
+    type: count_distinct
+    model: ref('fct_daily_user_activity')
+
+  # 19.5 Content Metrics
+  - name: ratings
+    description: "Total discipline/professor ratings submitted"
+    type: count
+    model: ref('fct_ratings')
+  - name: downloads
+    description: "Total material/past-exam downloads"
+    type: count
+    model: ref('fct_events')
+  - name: uploads
+    description: "Total materials uploaded"
+    type: count
+    model: ref('fct_events')
+  - name: searches
+    description: "Total search queries executed"
+    type: count
+    model: ref('fct_events')
+  - name: search_success_rate
+    description: "Share of searches with followthrough"
+    type: derived
+  - name: empty_search_rate
+    description: "Share of searches returning 0 results"
+    type: derived
+  - name: professors_ranked
+    description: "Distinct professors with at least one rating"
+    type: count_distinct
+    model: ref('fct_ratings')
+  - name: courses_ranked
+    description: "Distinct courses with at least one rating"
+    type: count_distinct
+    model: ref('fct_ratings')
+
+  # 19.6 Product Metrics
+  - name: funnel_conversion
+    description: "Step-over-step funnel conversion ratio"
+    type: derived
+  - name: screen_feature_abandonment
+    description: "Share of users starting but not completing multi-step flow"
+    type: derived
+  - name: most_least_used_features
+    description: "Ranked feature usage by unique users and event count"
+    type: derived
+  - name: navigation_flow
+    description: "Most common next-screen transitions"
+    type: derived
+
+  # 19.7 Quality Metrics
+  - name: api_error_rate
+    description: "Share of backend requests resulting in 5xx/4xx error"
+    type: derived
+  - name: frontend_error_rate
+    description: "Share of sessions with client-side error"
+    type: derived
+  - name: upload_failures
+    description: "Failed upload attempts as share of total attempts"
+    type: derived
+  - name: login_failures
+    description: "Failed login attempts as share of total attempts"
+    type: derived
+  - name: validation_errors
+    description: "Form/input validation errors count"
+    type: count
+    model: ref('fct_events')
+  - name: response_time_p50_p90
+    description: "Backend response time percentiles (P50/P90)"
+    type: derived
+
+  # 19.8 Data Engineering Metrics
+  - name: pipeline_runtime
+    description: "Duration of each DAG run"
+    type: derived
+  - name: pipeline_success_rate
+    description: "Share of DAG runs completing without failure"
+    type: derived
+  - name: etl_duration_by_stage
+    description: "Extraction/transform/load duration per task"
+    type: derived
+  - name: event_volume
+    description: "Raw events ingested per day"
+    type: count
+    model: ref('fct_events')
+  - name: data_freshness
+    description: "Time since most recent successfully loaded event"
+    type: derived
+  - name: duplicate_events
+    description: "Events with repeated event_id"
+    type: derived
+  - name: missing_late_events
+    description: "Late delivered events"
+    type: derived
+  - name: warehouse_growth
+    description: "Row count growth of core fact tables"
+    type: derived
+
+  # 19.9 Monetization Readiness Metrics
+  - name: power_user_concentration
+    description: "Share of engagement generated by top 10% of users"
+    type: derived
+  - name: high_value_feature_usage
+    description: "Usage rate of paywall-candidate features"
+    type: derived
+  - name: institutional_concentration
+    description: "Share of active users in top N universities"
+    type: derived
+  - name: willingness_to_engage_proxy
+    description: "Correlation between session frequency and feature depth"
+    type: derived
