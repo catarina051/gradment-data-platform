@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  postgres_dw:
+    image: postgres:15-alpine
+    container_name: gradment_postgres_dw
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: gradment_dw_test
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./warehouse/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+
+  airflow:
+    image: apache/airflow:2.7.1-python3.10
+    container_name: gradment_airflow
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./extract:/opt/airflow/extract
+      - ./scripts:/opt/airflow/scripts
+      - ./dbt_project:/opt/airflow/dbt_project
+      - ./warehouse:/opt/airflow/warehouse
+    depends_on:
+      - postgres_dw
+    command: bash -c "airflow db init && airflow users create --username admin --password admin --firstname Data --lastname Admin --role Admin --email admin@gradment.local && airflow webserver & airflow scheduler"
+
+volumes:
+  pgdata:

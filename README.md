@@ -59,7 +59,7 @@ This platform operates on a **Two-Lane Principle**:
 - [x] **Phase 2: Backend Instrumentation** ([docs/backend_instrumentation.md](docs/backend_instrumentation.md))
 - [x] **Phase 2.5: Frontend Telemetry Integration** ([docs/frontend_telemetry.md](docs/frontend_telemetry.md))
 - [x] **Phase 3: Analytical Database Design** ([docs/star_schema.md](docs/star_schema.md), [warehouse/schema.sql](warehouse/schema.sql), [docs/analytical_erd.md](docs/analytical_erd.md))
-- [ ] **Phase 4: ETL/ELT Pipeline**
+- [x] **Phase 4: ETL/ELT Pipeline** ([extract/](extract/), [dags/](dags/), [.github/workflows/phase4_ci.yml](.github/workflows/phase4_ci.yml))
 - [ ] **Phase 5: Data Quality**
 - [ ] **Phase 6: Data Warehouse**
 - [ ] **Phase 7: Metrics Catalog**
@@ -73,6 +73,8 @@ This platform operates on a **Two-Lane Principle**:
 
 ```
 gradment-data-platform/
+├── .github/workflows/         # CI/CD workflows for automated pipeline validation
+│   └── phase4_ci.yml
 ├── docs/                      # Architectural design, star schema spec, ERD, discovery docs
 │   ├── star_schema.md
 │   ├── analytical_erd.md
@@ -80,14 +82,28 @@ gradment-data-platform/
 │   ├── schema_inventory.md
 │   ├── backend_instrumentation.md
 │   └── frontend_telemetry.md
+├── extract/                   # Python extractor modules, watermark state, dynamic partition manager
+│   ├── extract_events.py
+│   ├── extract_reference_tables.py
+│   ├── watermark.py
+│   └── partition_manager.py
+├── dags/                      # Airflow DAG orchestrations (Synthetic, Real, Quality)
+│   ├── extract_transform_synthetic.py
+│   ├── extract_transform_real.py
+│   └── quality_dag.py
 ├── warehouse/                 # ANSI SQL DDL statements and database schema definitions
-│   └── schema.sql
+│   ├── schema.sql
+│   └── pipeline_audit.sql
 ├── dbt_project/               # dbt transformation models (staging, core marts, snapshots)
-├── scripts/                   # Data discovery, schema validation, utility scripts
+├── scripts/                   # Synthetic seed generator, schema & pipeline validation scripts
+│   ├── synthetic/generate_seeds.py
 │   ├── validate_events_catalog.py
-│   └── validate_star_schema.py
+│   ├── validate_star_schema.py
+│   ├── test_postgres_execution_and_pruning.py
+│   └── validate_phase4_pipeline.py
 ├── events_catalog.yml         # Phase 1 39-event catalog specification contract
 ├── schemas/                   # JSON Schema envelope validators
+├── docker-compose.yml         # Containerized Airflow + PostgreSQL deployment stack
 ├── .gitignore
 └── README.md
 ```
