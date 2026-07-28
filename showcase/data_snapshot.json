@@ -1,0 +1,417 @@
+{
+  "acquisition": [
+    {
+      "metric_date": "2026-06-29",
+      "new_users": 0.0,
+      "returning_users": 70.0,
+      "total_active_users": 70.0,
+      "total_users_cumulative": 200.0,
+      "user_growth_rate": null
+    },
+    {
+      "metric_date": "2026-06-28",
+      "new_users": 0.0,
+      "returning_users": 70.0,
+      "total_active_users": 70.0,
+      "total_users_cumulative": 200.0,
+      "user_growth_rate": null
+    },
+    {
+      "metric_date": "2026-06-27",
+      "new_users": 0.0,
+      "returning_users": 70.0,
+      "total_active_users": 70.0,
+      "total_users_cumulative": 200.0,
+      "user_growth_rate": null
+    },
+    {
+      "metric_date": "2026-06-26",
+      "new_users": 0.0,
+      "returning_users": 50.0,
+      "total_active_users": 50.0,
+      "total_users_cumulative": 200.0,
+      "user_growth_rate": null
+    },
+    {
+      "metric_date": "2026-06-25",
+      "new_users": 0.0,
+      "returning_users": 70.0,
+      "total_active_users": 70.0,
+      "total_users_cumulative": 200.0,
+      "user_growth_rate": null
+    },
+    {
+      "metric_date": "2026-06-24",
+      "new_users": 0.0,
+      "returning_users": 70.0,
+      "total_active_users": 70.0,
+      "total_users_cumulative": 200.0,
+      "user_growth_rate": null
+    },
+    {
+      "metric_date": "2026-06-23",
+      "new_users": 0.0,
+      "returning_users": 70.0,
+      "total_active_users": 70.0,
+      "total_users_cumulative": 200.0,
+      "user_growth_rate": null
+    },
+    {
+      "metric_date": "2026-06-22",
+      "new_users": 0.0,
+      "returning_users": 50.0,
+      "total_active_users": 50.0,
+      "total_users_cumulative": 200.0,
+      "user_growth_rate": null
+    },
+    {
+      "metric_date": "2026-06-21",
+      "new_users": 0.0,
+      "returning_users": 70.0,
+      "total_active_users": 70.0,
+      "total_users_cumulative": 200.0,
+      "user_growth_rate": null
+    },
+    {
+      "metric_date": "2026-06-20",
+      "new_users": 0.0,
+      "returning_users": 70.0,
+      "total_active_users": 70.0,
+      "total_users_cumulative": 200.0,
+      "user_growth_rate": null
+    }
+  ],
+  "activation": [
+    {
+      "registration_date": "2026-01-01",
+      "total_cohort_new_users": 200.0,
+      "activated_users_7d": 0.0,
+      "activation_rate_7d": 0.0,
+      "users_first_action_rating": 0.0,
+      "users_first_action_upload": 0.0
+    }
+  ],
+  "retention": [
+    {
+      "cohort_date": "2026-01-01",
+      "cohort_size": 200.0,
+      "d1_active_users": 85.0,
+      "d7_active_users": 70.0,
+      "d14_active_users": 70.0,
+      "d30_active_users": 100.0,
+      "d1_retention_rate": 0.425,
+      "d7_retention_rate": 0.35,
+      "d30_retention_rate": 0.5
+    }
+  ],
+  "engagement": [
+    {
+      "activity_date": "2026-06-29",
+      "dau": 70.0,
+      "wau": 200.0,
+      "mau": 200.0,
+      "stickiness_dau_mau": 0.35,
+      "avg_session_duration_seconds": 420.0,
+      "sessions_per_user": 0.27,
+      "bounce_rate": 0.0,
+      "feature_adoption_rate": 0.35,
+      "dormant_users_count": 0.0,
+      "power_users_count": 2.0
+    },
+    {
+      "activity_date": "2026-06-28",
+      "dau": 70.0,
+      "wau": 200.0,
+      "mau": 200.0,
+      "stickiness_dau_mau": 0.35,
+      "avg_session_duration_seconds": 420.0,
+      "sessions_per_user": 0.27,
+      "bounce_rate": 0.0,
+      "feature_adoption_rate": 0.35,
+      "dormant_users_count": 0.0,
+      "power_users_count": 2.0
+    },
+    {
+      "activity_date": "2026-06-27",
+      "dau": 70.0,
+      "wau": 200.0,
+      "mau": 200.0,
+      "stickiness_dau_mau": 0.35,
+      "avg_session_duration_seconds": 420.0,
+      "sessions_per_user": 0.27,
+      "bounce_rate": 0.0,
+      "feature_adoption_rate": 0.35,
+      "dormant_users_count": 0.0,
+      "power_users_count": 2.0
+    },
+    {
+      "activity_date": "2026-06-26",
+      "dau": 50.0,
+      "wau": 200.0,
+      "mau": 200.0,
+      "stickiness_dau_mau": 0.25,
+      "avg_session_duration_seconds": 420.0,
+      "sessions_per_user": 0.38,
+      "bounce_rate": 0.0,
+      "feature_adoption_rate": 0.25,
+      "dormant_users_count": 0.0,
+      "power_users_count": 2.0
+    },
+    {
+      "activity_date": "2026-06-25",
+      "dau": 70.0,
+      "wau": 200.0,
+      "mau": 200.0,
+      "stickiness_dau_mau": 0.35,
+      "avg_session_duration_seconds": 420.0,
+      "sessions_per_user": 0.27,
+      "bounce_rate": 0.0,
+      "feature_adoption_rate": 0.35,
+      "dormant_users_count": 0.0,
+      "power_users_count": 2.0
+    },
+    {
+      "activity_date": "2026-06-24",
+      "dau": 70.0,
+      "wau": 200.0,
+      "mau": 200.0,
+      "stickiness_dau_mau": 0.35,
+      "avg_session_duration_seconds": 420.0,
+      "sessions_per_user": 0.27,
+      "bounce_rate": 0.0,
+      "feature_adoption_rate": 0.35,
+      "dormant_users_count": 0.0,
+      "power_users_count": 2.0
+    },
+    {
+      "activity_date": "2026-06-23",
+      "dau": 70.0,
+      "wau": 200.0,
+      "mau": 200.0,
+      "stickiness_dau_mau": 0.35,
+      "avg_session_duration_seconds": 420.0,
+      "sessions_per_user": 0.27,
+      "bounce_rate": 0.0,
+      "feature_adoption_rate": 0.35,
+      "dormant_users_count": 0.0,
+      "power_users_count": 2.0
+    },
+    {
+      "activity_date": "2026-06-22",
+      "dau": 50.0,
+      "wau": 200.0,
+      "mau": 200.0,
+      "stickiness_dau_mau": 0.25,
+      "avg_session_duration_seconds": 420.0,
+      "sessions_per_user": 0.38,
+      "bounce_rate": 0.0,
+      "feature_adoption_rate": 0.25,
+      "dormant_users_count": 0.0,
+      "power_users_count": 2.0
+    },
+    {
+      "activity_date": "2026-06-21",
+      "dau": 70.0,
+      "wau": 200.0,
+      "mau": 200.0,
+      "stickiness_dau_mau": 0.35,
+      "avg_session_duration_seconds": 420.0,
+      "sessions_per_user": 0.27,
+      "bounce_rate": 0.0,
+      "feature_adoption_rate": 0.35,
+      "dormant_users_count": 0.0,
+      "power_users_count": 2.0
+    },
+    {
+      "activity_date": "2026-06-20",
+      "dau": 70.0,
+      "wau": 200.0,
+      "mau": 200.0,
+      "stickiness_dau_mau": 0.35,
+      "avg_session_duration_seconds": 420.0,
+      "sessions_per_user": 0.27,
+      "bounce_rate": 0.0,
+      "feature_adoption_rate": 0.35,
+      "dormant_users_count": 0.0,
+      "power_users_count": 2.0
+    }
+  ],
+  "content": [
+    {
+      "metric_date": "2026-06-29",
+      "total_ratings": 9.0,
+      "avg_dificuldade": 4.0,
+      "avg_esforco": 3.0,
+      "professors_ranked": 1.0,
+      "courses_ranked": 1.0,
+      "downloads": 0.0,
+      "uploads": 0.0,
+      "searches": 0.0,
+      "search_success_rate": null,
+      "empty_search_rate": null
+    },
+    {
+      "metric_date": "2026-06-28",
+      "total_ratings": 9.0,
+      "avg_dificuldade": 4.0,
+      "avg_esforco": 3.0,
+      "professors_ranked": 1.0,
+      "courses_ranked": 1.0,
+      "downloads": 0.0,
+      "uploads": 0.0,
+      "searches": 0.0,
+      "search_success_rate": null,
+      "empty_search_rate": null
+    },
+    {
+      "metric_date": "2026-06-27",
+      "total_ratings": 9.0,
+      "avg_dificuldade": 4.0,
+      "avg_esforco": 3.0,
+      "professors_ranked": 1.0,
+      "courses_ranked": 1.0,
+      "downloads": 0.0,
+      "uploads": 0.0,
+      "searches": 0.0,
+      "search_success_rate": null,
+      "empty_search_rate": null
+    },
+    {
+      "metric_date": "2026-06-26",
+      "total_ratings": 9.0,
+      "avg_dificuldade": 4.0,
+      "avg_esforco": 3.0,
+      "professors_ranked": 1.0,
+      "courses_ranked": 1.0,
+      "downloads": 0.0,
+      "uploads": 0.0,
+      "searches": 0.0,
+      "search_success_rate": null,
+      "empty_search_rate": null
+    },
+    {
+      "metric_date": "2026-06-25",
+      "total_ratings": 9.0,
+      "avg_dificuldade": 4.0,
+      "avg_esforco": 3.0,
+      "professors_ranked": 1.0,
+      "courses_ranked": 1.0,
+      "downloads": 0.0,
+      "uploads": 0.0,
+      "searches": 0.0,
+      "search_success_rate": null,
+      "empty_search_rate": null
+    },
+    {
+      "metric_date": "2026-06-24",
+      "total_ratings": 9.0,
+      "avg_dificuldade": 4.0,
+      "avg_esforco": 3.0,
+      "professors_ranked": 1.0,
+      "courses_ranked": 1.0,
+      "downloads": 0.0,
+      "uploads": 0.0,
+      "searches": 0.0,
+      "search_success_rate": null,
+      "empty_search_rate": null
+    },
+    {
+      "metric_date": "2026-06-23",
+      "total_ratings": 9.0,
+      "avg_dificuldade": 4.0,
+      "avg_esforco": 3.0,
+      "professors_ranked": 1.0,
+      "courses_ranked": 1.0,
+      "downloads": 0.0,
+      "uploads": 0.0,
+      "searches": 0.0,
+      "search_success_rate": null,
+      "empty_search_rate": null
+    },
+    {
+      "metric_date": "2026-06-22",
+      "total_ratings": 9.0,
+      "avg_dificuldade": 4.0,
+      "avg_esforco": 3.0,
+      "professors_ranked": 1.0,
+      "courses_ranked": 1.0,
+      "downloads": 0.0,
+      "uploads": 0.0,
+      "searches": 0.0,
+      "search_success_rate": null,
+      "empty_search_rate": null
+    },
+    {
+      "metric_date": "2026-06-21",
+      "total_ratings": 9.0,
+      "avg_dificuldade": 4.0,
+      "avg_esforco": 3.0,
+      "professors_ranked": 1.0,
+      "courses_ranked": 1.0,
+      "downloads": 0.0,
+      "uploads": 0.0,
+      "searches": 0.0,
+      "search_success_rate": null,
+      "empty_search_rate": null
+    },
+    {
+      "metric_date": "2026-06-20",
+      "total_ratings": 9.0,
+      "avg_dificuldade": 4.0,
+      "avg_esforco": 3.0,
+      "professors_ranked": 1.0,
+      "courses_ranked": 1.0,
+      "downloads": 0.0,
+      "uploads": 0.0,
+      "searches": 0.0,
+      "search_success_rate": null,
+      "empty_search_rate": null
+    }
+  ],
+  "product": [
+    {
+      "feature_key": "Disciplinas & Professores",
+      "unique_users_count": 200.0,
+      "total_events_count": 146340.0,
+      "rank_most_used": 1.0,
+      "rank_least_used": 3.0
+    },
+    {
+      "feature_key": "Sess\u00f5es de Estudo",
+      "unique_users_count": 19.0,
+      "total_events_count": 3420.0,
+      "rank_most_used": 2.0,
+      "rank_least_used": 2.0
+    },
+    {
+      "feature_key": "Avalia\u00e7\u00f5es",
+      "unique_users_count": 9.0,
+      "total_events_count": 1620.0,
+      "rank_most_used": 3.0,
+      "rank_least_used": 1.0
+    }
+  ],
+  "quality": [],
+  "data_engineering": [
+    {
+      "run_date": "2026-07-28",
+      "total_runs": 5.0,
+      "successful_runs": 5.0,
+      "pipeline_success_rate": 1.0,
+      "avg_pipeline_runtime_seconds": 0.68,
+      "total_rows_extracted": 2441.0,
+      "total_rows_loaded": 977.0
+    }
+  ],
+  "monetization": [
+    {
+      "total_engaged_users": 19.0,
+      "top_decile_sessions": 360.0,
+      "total_sessions": 3420.0,
+      "power_user_concentration_rate": 0.1053,
+      "high_value_feature_usage_count": 0.0,
+      "institutional_concentration_rate": 1.0,
+      "willingness_to_engage_proxy": 0.002381
+    }
+  ]
+}

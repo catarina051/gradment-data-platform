@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "dashboards": [
+    {
+      "name": "Executive Dashboard",
+      "cards": 3,
+      "kpi_count": 14
+    },
+    {
+      "name": "Product & Feature Dashboard",
+      "cards": 3,
+      "kpi_count": 13
+    },
+    {
+      "name": "Academic & Content Dashboard",
+      "cards": 2,
+      "kpi_count": 10
+    },
+    {
+      "name": "Engineering & Observability Dashboard",
+      "cards": 2,
+      "kpi_count": 7
+    },
+    {
+      "name": "Data Team Dashboard",
+      "cards": 2,
+      "kpi_count": 8
+    },
+    {
+      "name": "Monetization & Business Validation Dashboard",
+      "cards": 1,
+      "kpi_count": 4
+    }
+  ]
+}

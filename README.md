@@ -63,7 +63,7 @@ This platform operates on a **Two-Lane Principle**:
 - [x] **Phase 5: Data Quality** ([dbt_project/models/](dbt_project/models/), [dbt_project/tests/singular/](dbt_project/tests/singular/), [scripts/check_schema_drift.py](scripts/check_schema_drift.py), [.github/workflows/phase5_ci.yml](.github/workflows/phase5_ci.yml))
 - [x] **Phase 6: Data Warehouse** ([docs/data-catalog/](docs/data-catalog/), [docs/lineage.md](docs/lineage.md), [docs/pipeline_benchmarks.md](docs/pipeline_benchmarks.md), [.github/workflows/phase6_ci.yml](.github/workflows/phase6_ci.yml))
 - [x] **Phase 7: Metrics Catalog** ([dbt_project/models/marts/metrics/](dbt_project/models/marts/metrics/), [docs/metrics_catalog.md](docs/metrics_catalog.md), [scripts/check_metrics_drift.py](scripts/check_metrics_drift.py), [.github/workflows/phase7_ci.yml](.github/workflows/phase7_ci.yml))
-- [ ] **Phase 8: Dashboards**
+- [x] **Phase 8: Dashboards** ([metabase/dashboards/](metabase/dashboards/), [showcase/index.html](showcase/index.html), [docs/dashboard_screenshots/](docs/dashboard_screenshots/), [.github/workflows/phase8_ci.yml](.github/workflows/phase8_ci.yml))
 - [ ] **Phase 9: Deployment**
 - [ ] **Phase 10: Portfolio Packaging**
 
@@ -73,12 +73,13 @@ This platform operates on a **Two-Lane Principle**:
 
 ```
 gradment-data-platform/
-├── .github/workflows/         # CI/CD workflows for automated pipeline, quality, performance & metric validation
+├── .github/workflows/         # CI/CD workflows for automated pipeline, quality, performance, metric & dashboard validation
 │   ├── phase4_ci.yml
 │   ├── phase5_ci.yml
 │   ├── phase6_ci.yml
-│   └── phase7_ci.yml
-├── docs/                      # Architectural design, star schema spec, ERD, data catalog, lineage, metrics & benchmarks
+│   ├── phase7_ci.yml
+│   └── phase8_ci.yml
+├── docs/                      # Architectural design, star schema spec, ERD, data catalog, lineage, metrics & screenshots
 │   ├── star_schema.md
 │   ├── analytical_erd.md
 │   ├── lineage.md
@@ -86,10 +87,23 @@ gradment-data-platform/
 │   ├── metrics_catalog.md     # Specification catalog for all 56 Section 19 metrics across 9 categories
 │   ├── pipeline_benchmarks.md
 │   ├── data-catalog/          # Individual markdown catalog for all 11 warehouse models
+│   ├── dashboard_screenshots/ # Build-rendered visual screenshot artifacts for all 6 role-based dashboards
 │   ├── product_discovery.md
 │   ├── schema_inventory.md
 │   ├── backend_instrumentation.md
 │   └── frontend_telemetry.md
+├── metabase/                  # Role-based dashboard catalog specifications & JSON export
+│   ├── dashboards/            # 6 catalog specs following Section 27 template
+│   │   ├── executive_dashboard.md
+│   │   ├── product_dashboard.md
+│   │   ├── academic_dashboard.md
+│   │   ├── engineering_dashboard.md
+│   │   ├── data_dashboard.md
+│   │   └── monetization_dashboard.md
+│   └── export_dashboards.json
+├── showcase/                  # Standalone interactive public web dashboard showcase app
+│   ├── index.html
+│   └── data_snapshot.json     # Embedded Data Snapshot updated at build time
 ├── extract/                   # Python extractor modules, watermark state, dynamic partition manager
 │   ├── extract_events.py
 │   ├── extract_reference_tables.py
@@ -108,18 +122,8 @@ gradment-data-platform/
 │   ├── models/staging/_staging__models.yml
 │   ├── models/marts/core/_core__models.yml
 │   ├── models/marts/metrics/ # 9 dedicated SQL mart models matching Section 19 categories 1:1
-│   │   ├── metrics_catalog.yml
-│   │   ├── mrt_acquisition.sql
-│   │   ├── mrt_activation.sql
-│   │   ├── mrt_retention.sql
-│   │   ├── mrt_engagement.sql
-│   │   ├── mrt_content.sql
-│   │   ├── mrt_product.sql
-│   │   ├── mrt_quality.sql
-│   │   ├── mrt_data_engineering.sql
-│   │   └── mrt_monetization_readiness.sql
 │   └── tests/singular/
-├── scripts/                   # Synthetic seed generator, schema, performance & metric validation scripts
+├── scripts/                   # Synthetic seed generator, schema, performance, metric & dashboard validation scripts
 │   ├── synthetic/generate_seeds.py
 │   ├── validate_events_catalog.py
 │   ├── validate_star_schema.py
@@ -130,7 +134,10 @@ gradment-data-platform/
 │   ├── verify_phase6_dw_performance.py
 │   ├── validate_phase6_warehouse.py
 │   ├── check_metrics_drift.py
-│   └── validate_phase7_metrics.py
+│   ├── validate_phase7_metrics.py
+│   ├── generate_dashboards.py
+│   ├── generate_dashboard_screenshots.py
+│   └── validate_phase8_dashboards.py
 ├── events_catalog.yml         # Phase 1 39-event catalog specification contract
 ├── schemas/                   # JSON Schema envelope validators
 ├── docker-compose.yml         # Containerized Airflow + PostgreSQL deployment stack
