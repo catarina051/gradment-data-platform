@@ -26,14 +26,24 @@ models:
         fct_events:
           +materialized: incremental
           +unique_key: 'event_id'
+          +incremental_strategy: delete+insert
         fct_daily_user_activity:
-          +materialized: incremental
-          +unique_key: ['date_sk', 'user_sk']
+          +materialized: table
         fct_ratings:
-          +materialized: incremental
-          +unique_key: 'rating_id'
+          +materialized: table
         fct_sessions:
-          +materialized: incremental
-          +unique_key: 'session_id'
+          +materialized: table
         dim_users:
+          +materialized: table
+        dim_professors:
+          +materialized: table
+        dim_courses:
+          +materialized: table
+        dim_universities:
+          +materialized: table
+        dim_academic_periods:
+          +materialized: table
+        dim_date:
+          +materialized: table
+        dim_screens:
           +materialized: table

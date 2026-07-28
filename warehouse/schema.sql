@@ -189,6 +189,7 @@ CREATE TABLE fct_daily_user_activity (
     CONSTRAINT uq_daily_user_activity UNIQUE (date_sk, user_sk)
 );
 
+CREATE INDEX idx_fct_daily_activity_date_user ON fct_daily_user_activity(date_sk, user_sk);
 CREATE INDEX idx_fct_daily_user_activity_date_sk ON fct_daily_user_activity(date_sk);
 CREATE INDEX idx_fct_daily_user_activity_user_sk ON fct_daily_user_activity(user_sk);
 CREATE INDEX idx_fct_daily_user_activity_university_sk ON fct_daily_user_activity(university_sk);
