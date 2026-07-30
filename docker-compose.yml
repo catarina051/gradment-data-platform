@@ -11,27 +11,87 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./warehouse/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - postgres_dw_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gradment_dw_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  airflow:
-    image: apache/airflow:2.7.1-python3.10
-    container_name: gradment_airflow
+  airflow_db:
+    image: postgres:15-alpine
+    container_name: gradment_airflow_db
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - airflow_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  airflow_webserver:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.airflow
+    container_name: gradment_airflow_webserver
+    restart: always
+    command: webserver
     environment:
       - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow_db:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=46ExTH2ZsRnbuWYFFTKxoxA5yapKXGWaUKoCzE_55E8=
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
     ports:
       - "8080:8080"
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./extract:/opt/airflow/extract
-      - ./scripts:/opt/airflow/scripts
-      - ./dbt_project:/opt/airflow/dbt_project
-      - ./warehouse:/opt/airflow/warehouse
     depends_on:
-      - postgres_dw
-    command: bash -c "airflow db init && airflow users create --username admin --password admin --firstname Data --lastname Admin --role Admin --email admin@gradment.local && airflow webserver & airflow scheduler"
+      airflow_db:
+        condition: service_healthy
+      postgres_dw:
+        condition: service_healthy
+
+  airflow_scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.airflow
+    container_name: gradment_airflow_scheduler
+    restart: always
+    command: scheduler
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow_db:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=46ExTH2ZsRnbuWYFFTKxoxA5yapKXGWaUKoCzE_55E8=
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    depends_on:
+      airflow_db:
+        condition: service_healthy
+      postgres_dw:
+        condition: service_healthy
+
+  metabase:
+    image: metabase/metabase:latest
+    container_name: gradment_metabase
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: gradment_dw_test
+      MB_DB_PORT: 5432
+      MB_DB_USER: postgres
+      MB_DB_PASS: postgres
+      MB_DB_HOST: postgres_dw
+    depends_on:
+      postgres_dw:
+        condition: service_healthy
+    volumes:
+      - metabase_data:/metabase-data
 
 volumes:
-  pgdata:
+  postgres_dw_data:
+  airflow_db_data:
+  metabase_data:

@@ -2,6 +2,7 @@
 .env
 .env.local
 *.env
+scripts/create_analytics_ro_user.sql
 
 # Python & execution cache
 __pycache__/

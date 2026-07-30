@@ -64,8 +64,8 @@ This platform operates on a **Two-Lane Principle**:
 - [x] **Phase 6: Data Warehouse** ([docs/data-catalog/](docs/data-catalog/), [docs/lineage.md](docs/lineage.md), [docs/pipeline_benchmarks.md](docs/pipeline_benchmarks.md), [.github/workflows/phase6_ci.yml](.github/workflows/phase6_ci.yml))
 - [x] **Phase 7: Metrics Catalog** ([dbt_project/models/marts/metrics/](dbt_project/models/marts/metrics/), [docs/metrics_catalog.md](docs/metrics_catalog.md), [scripts/check_metrics_drift.py](scripts/check_metrics_drift.py), [.github/workflows/phase7_ci.yml](.github/workflows/phase7_ci.yml))
 - [x] **Phase 8: Dashboards** ([metabase/dashboards/](metabase/dashboards/), [showcase/index.html](showcase/index.html), [docs/dashboard_screenshots/](docs/dashboard_screenshots/), [.github/workflows/phase8_ci.yml](.github/workflows/phase8_ci.yml))
-- [ ] **Phase 9: Deployment**
-- [ ] **Phase 10: Portfolio Packaging**
+- [x] **Phase 9: Deployment** ([Makefile](Makefile), [docker-compose.yml](docker-compose.yml), [docker/Dockerfile.airflow](docker/Dockerfile.airflow), [scripts/health_check.py](scripts/health_check.py), [monitoring/alerts.py](monitoring/alerts.py), [docs/deployment_guide.md](docs/deployment_guide.md), [.github/workflows/gitleaks.yml](.github/workflows/gitleaks.yml), [.github/workflows/ci_cd_matrix.yml](.github/workflows/ci_cd_matrix.yml))
+- [x] **Phase 10: Portfolio Packaging**
 
 ---
 
@@ -73,37 +73,34 @@ This platform operates on a **Two-Lane Principle**:
 
 ```
 gradment-data-platform/
-├── .github/workflows/         # CI/CD workflows for automated pipeline, quality, performance, metric & dashboard validation
+├── .github/workflows/         # CI/CD workflows for pipeline matrix & automated secret scanning
 │   ├── phase4_ci.yml
 │   ├── phase5_ci.yml
 │   ├── phase6_ci.yml
 │   ├── phase7_ci.yml
-│   └── phase8_ci.yml
-├── docs/                      # Architectural design, star schema spec, ERD, data catalog, lineage, metrics & screenshots
+│   ├── phase8_ci.yml
+│   ├── gitleaks.yml           # Automated Gitleaks secret scanner
+│   └── ci_cd_matrix.yml       # Consolidated multi-phase validation matrix
+├── docs/                      # Architectural design, data catalog, metrics, screenshots & runbook
 │   ├── star_schema.md
 │   ├── analytical_erd.md
 │   ├── lineage.md
 │   ├── lineage.png
-│   ├── metrics_catalog.md     # Specification catalog for all 56 Section 19 metrics across 9 categories
+│   ├── metrics_catalog.md
 │   ├── pipeline_benchmarks.md
-│   ├── data-catalog/          # Individual markdown catalog for all 11 warehouse models
-│   ├── dashboard_screenshots/ # Build-rendered visual screenshot artifacts for all 6 role-based dashboards
-│   ├── product_discovery.md
-│   ├── schema_inventory.md
-│   ├── backend_instrumentation.md
-│   └── frontend_telemetry.md
+│   ├── deployment_guide.md    # Production deployment runbook
+│   ├── data-catalog/
+│   └── dashboard_screenshots/ # Build-rendered visual screenshot artifacts for all 6 role-based dashboards
+├── docker/                    # Docker container image build definitions
+│   └── Dockerfile.airflow
 ├── metabase/                  # Role-based dashboard catalog specifications & JSON export
 │   ├── dashboards/            # 6 catalog specs following Section 27 template
-│   │   ├── executive_dashboard.md
-│   │   ├── product_dashboard.md
-│   │   ├── academic_dashboard.md
-│   │   ├── engineering_dashboard.md
-│   │   ├── data_dashboard.md
-│   │   └── monetization_dashboard.md
 │   └── export_dashboards.json
 ├── showcase/                  # Standalone interactive public web dashboard showcase app
 │   ├── index.html
 │   └── data_snapshot.json     # Embedded Data Snapshot updated at build time
+├── monitoring/                # System failure notification & alert hook engine
+│   └── alerts.py
 ├── extract/                   # Python extractor modules, watermark state, dynamic partition manager
 │   ├── extract_events.py
 │   ├── extract_reference_tables.py
@@ -123,7 +120,7 @@ gradment-data-platform/
 │   ├── models/marts/core/_core__models.yml
 │   ├── models/marts/metrics/ # 9 dedicated SQL mart models matching Section 19 categories 1:1
 │   └── tests/singular/
-├── scripts/                   # Synthetic seed generator, schema, performance, metric & dashboard validation scripts
+├── scripts/                   # Synthetic seed generator, health check & validation scripts
 │   ├── synthetic/generate_seeds.py
 │   ├── validate_events_catalog.py
 │   ├── validate_star_schema.py
@@ -137,10 +134,13 @@ gradment-data-platform/
 │   ├── validate_phase7_metrics.py
 │   ├── generate_dashboards.py
 │   ├── generate_dashboard_screenshots.py
-│   └── validate_phase8_dashboards.py
+│   ├── validate_phase8_dashboards.py
+│   ├── health_check.py
+│   └── validate_phase9_deployment.py
+├── Makefile                   # Developer CLI wrapper (up, seed, run-pipeline, test, health, down, reset)
 ├── events_catalog.yml         # Phase 1 39-event catalog specification contract
 ├── schemas/                   # JSON Schema envelope validators
-├── docker-compose.yml         # Containerized Airflow + PostgreSQL deployment stack
+├── docker-compose.yml         # Containerized PostgreSQL + Metabase deployment stack
 ├── .gitignore
 └── README.md
 ```

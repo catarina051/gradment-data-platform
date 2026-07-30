@@ -19,6 +19,12 @@ import json
 import psycopg2
 from datetime import datetime, timezone
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(PROJECT_ROOT)
 
@@ -30,6 +36,12 @@ PG_PORT = int(os.getenv('PG_PORT', 5432))
 PG_USER = os.getenv('PG_USER', 'postgres')
 PG_PASS = os.getenv('PG_PASS', 'postgres')
 PG_DB = os.getenv('PG_DB', 'gradment_dw_test')
+
+MYSQL_HOST = os.getenv('MYSQL_HOST', '172.20.0.20')
+MYSQL_PORT = int(os.getenv('MYSQL_PORT', 3306))
+MYSQL_USER = os.getenv('MYSQL_USER', 'analytics_ro')
+MYSQL_PASS = os.getenv('MYSQL_PASSWORD', '')
+MYSQL_DB = os.getenv('MYSQL_DATABASE', 'gradment')
 
 SEEDS_PATH = os.path.join(PROJECT_ROOT, 'dbt_project', 'seeds', 'synthetic_events_seed.json')
 
@@ -60,9 +72,9 @@ def ensure_staging_schema(conn):
         """)
     conn.commit()
 
-def run_extraction(source='synthetic', full_refresh=False):
+def run_extraction(source='synthetic', full_refresh=False, limit=None):
     print(f"\n======================================================================")
-    print(f"Starting Telemetry Event Extraction | Source: {source.upper()} | Full Refresh: {full_refresh}")
+    print(f"Starting Telemetry Event Extraction | Source: {source.upper()} | Full Refresh: {full_refresh} | Limit: {limit}")
     print(f"======================================================================")
 
     start_time = datetime.now(timezone.utc)
@@ -94,9 +106,61 @@ def run_extraction(source='synthetic', full_refresh=False):
             ev_dt = parse_utc_dt(ev['event_ts'])
             if full_refresh or ev_dt > watermark_dt:
                 extracted_events.append(ev)
+                if limit and len(extracted_events) >= limit:
+                    break
     else:
-        print("[EXTRACT] Real Lane extraction requires analytics_ro MySQL user connection.")
-        # In real lane mode, connects via SQLAlchemy to MySQL analytics_ro read replica
+        print(f"[EXTRACT] Real Lane mode: Connecting to MySQL ({MYSQL_HOST}:{MYSQL_PORT}) as '{MYSQL_USER}'...")
+        import pymysql
+        my_conn = pymysql.connect(
+            host=MYSQL_HOST,
+            port=MYSQL_PORT,
+            user=MYSQL_USER,
+            password=MYSQL_PASS,
+            database=MYSQL_DB,
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        try:
+            with my_conn.cursor() as my_cur:
+                query = """
+                    SELECT event_id, event_name, schema_version, user_id, session_id,
+                           event_ts, platform, app_version, payload
+                    FROM analytics_events
+                    WHERE event_ts > %s
+                    ORDER BY event_ts ASC
+                """
+                if limit:
+                    query += f" LIMIT {int(limit)}"
+                
+                my_cur.execute(query, (watermark_dt.strftime('%Y-%m-%d %H:%M:%S'),))
+                rows = my_cur.fetchall()
+                for r in rows:
+                    p_val = r['payload']
+                    if isinstance(p_val, str):
+                        try:
+                            p_json = json.loads(p_val)
+                        except Exception:
+                            p_json = {}
+                    elif isinstance(p_val, dict):
+                        p_json = p_val
+                    else:
+                        p_json = {}
+
+                    extracted_events.append({
+                        'event_id': r['event_id'],
+                        'event_name': r['event_name'],
+                        'category': 'General',
+                        'priority': 'Normal',
+                        'schema_version': str(r['schema_version']),
+                        'session_id': r['session_id'],
+                        'user_id': r['user_id'] or 0,
+                        'platform': r['platform'] or 'web',
+                        'app_version': r['app_version'] or '1.0.0',
+                        'screen_name': None,
+                        'event_ts': r['event_ts'].isoformat() if isinstance(r['event_ts'], datetime) else str(r['event_ts']),
+                        'payload_json': json.dumps(p_json)
+                    })
+        finally:
+            my_conn.close()
 
     print(f"[EXTRACT] Extracted {len(extracted_events)} candidate events for loading.")
 
@@ -134,6 +198,8 @@ def run_extraction(source='synthetic', full_refresh=False):
                 max_dt = ev_dt
 
     conn.commit()
+    if max_dt > watermark_dt:
+        update_watermark(conn, watermark_key, max_dt.isoformat())
 
     end_time = datetime.now(timezone.utc)
     duration = (end_time - start_time).total_seconds()
@@ -160,6 +226,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="GradMent Telemetry Event Extractor")
     parser.add_argument('--source', choices=['synthetic', 'real'], default='synthetic', help="Data source lane")
     parser.add_argument('--full-refresh', action='store_true', help="Bypass watermark and force full backfill extraction (FR-3)")
+    parser.add_argument('--limit', type=int, default=None, help="Limit number of extracted rows for controlled testing")
     args = parser.parse_args()
 
-    run_extraction(source=args.source, full_refresh=args.full_refresh)
+    run_extraction(source=args.source, full_refresh=args.full_refresh, limit=args.limit)
+
