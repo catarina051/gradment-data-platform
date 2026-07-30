@@ -21,7 +21,7 @@ user_univ as (
 )
 
 select
-    abs(hashtext(de.date_sk::text || '-' || de.user_sk::text))::bigint as daily_activity_sk,
+    ('0x' || substring(md5(de.date_sk::text || '-' || de.user_sk::text), 1, 15))::bit(60)::bigint as daily_activity_sk,
     de.date_sk,
     de.user_sk,
     coalesce(uu.university_sk, 1) as university_sk,

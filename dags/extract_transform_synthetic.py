@@ -57,7 +57,7 @@ with DAG(
 
     log_audit = BashOperator(
         task_id='log_pipeline_run',
-        bash_command='python -c "print(\'[AIRFLOW AUDIT] Pipeline execution logged successfully to fct_pipeline_runs.\')"',
+        bash_command='python /opt/airflow/extract/audit.py --dag extract_transform_synthetic',
     )
 
     generate_seeds >> [extract_events, extract_reference] >> dbt_snapshot >> dbt_run_full_pipeline >> log_audit

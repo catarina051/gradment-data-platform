@@ -13,7 +13,7 @@ with session_aggregation as (
 )
 
 select
-    abs(hashtext(session_id))::bigint as session_sk,
+    ('0x' || substring(md5(session_id), 1, 15))::bit(60)::bigint as session_sk,
     session_id,
     session_start_date_sk,
     user_sk,

@@ -173,31 +173,40 @@ def run_extraction(source='synthetic', full_refresh=False, limit=None):
     timestamps = [ev['event_ts'] for ev in extracted_events]
     ensure_partitions_for_timestamps(conn, timestamps)
 
-    # Insert into staging analytics_events table with idempotency
+    # Insert into staging analytics_events table with batch insertion idempotency
+    from psycopg2.extras import execute_values
     inserted_count = 0
     max_dt = watermark_dt
 
+    records = [
+        (
+            ev['event_id'], ev['event_name'], ev['category'], ev['priority'],
+            ev['schema_version'], ev['session_id'], ev['user_id'], ev['platform'],
+            ev['app_version'], ev['screen_name'], ev['event_ts'], ev['payload_json']
+        )
+        for ev in extracted_events
+    ]
+
+    insert_query = """
+        INSERT INTO analytics_events (
+            id, event_name, category, priority, schema_version,
+            session_id, user_id, platform, app_version, screen_name,
+            timestamp, payload, created_at
+        ) VALUES %s
+        ON CONFLICT (id) DO NOTHING;
+    """
+
     with conn.cursor() as cur:
-        for ev in extracted_events:
-            cur.execute("""
-                INSERT INTO analytics_events (
-                    id, event_name, category, priority, schema_version,
-                    session_id, user_id, platform, app_version, screen_name,
-                    timestamp, payload, created_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
-                ON CONFLICT (id) DO NOTHING;
-            """, (
-                ev['event_id'], ev['event_name'], ev['category'], ev['priority'],
-                ev['schema_version'], ev['session_id'], ev['user_id'], ev['platform'],
-                ev['app_version'], ev['screen_name'], ev['event_ts'], ev['payload_json']
-            ))
-            if cur.rowcount > 0:
-                inserted_count += 1
-            ev_dt = parse_utc_dt(ev['event_ts'])
-            if ev_dt > max_dt:
-                max_dt = ev_dt
+        execute_values(cur, insert_query, records, template="(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())")
+        inserted_count = cur.rowcount if cur.rowcount > 0 else len(extracted_events)
+
+    for ev in extracted_events:
+        ev_dt = parse_utc_dt(ev['event_ts'])
+        if ev_dt > max_dt:
+            max_dt = ev_dt
 
     conn.commit()
+
     if max_dt > watermark_dt:
         update_watermark(conn, watermark_key, max_dt.isoformat())
 

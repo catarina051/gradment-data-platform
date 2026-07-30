@@ -1,0 +1,27 @@
+version: 2
+
+sources:
+  - name: raw_telemetry
+    description: "Raw telemetry event stream table in analytical PostgreSQL staging schema."
+    tables:
+      - name: analytics_events
+        description: "Canonical event log table."
+        columns:
+          - name: id
+            description: "Natural event UUID primary key."
+          - name: event_name
+            description: "Snake_case event identifier."
+          - name: timestamp
+            description: "Event UTC timestamp."
+
+  - name: operational_db
+    description: "Staging snapshots of operational database entities."
+    tables:
+      - name: usuarios
+        description: "Operational user entity metadata."
+      - name: curriculo_disciplinas
+        description: "Curriculum discipline entity metadata."
+      - name: faculdades
+        description: "University metadata."
+      - name: cursos
+        description: "Degree course metadata."

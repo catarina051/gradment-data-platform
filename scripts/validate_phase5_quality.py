@@ -66,25 +66,29 @@ def check_singular_invariant_tests():
     conn = get_db_conn()
     cursor = conn.cursor()
 
-    tests = [
-        ('assert_session_duration_non_negative.sql', "SELECT session_id FROM fct_sessions WHERE session_duration_seconds < 0;"),
-        ('assert_rating_scores_valid.sql', "SELECT rating_id FROM fct_ratings WHERE dificuldade < 1 OR dificuldade > 5 OR esforco < 1 OR esforco > 5;"),
-        ('assert_event_ts_not_in_future.sql', "SELECT event_id FROM fct_events WHERE event_ts > CURRENT_TIMESTAMP + INTERVAL '5 minutes';"),
-        ('assert_fct_events_no_duplicates.sql', "SELECT event_id FROM fct_events GROUP BY event_id HAVING COUNT(*) > 1;")
-    ]
+    singular_dir = os.path.join(PROJECT_ROOT, 'dbt_project', 'tests', 'singular')
+    if not os.path.exists(singular_dir):
+        print(f"  [FAIL] Singular tests directory missing at {singular_dir}")
+        conn.close()
+        return False
 
     all_passed = True
-    for test_name, query in tests:
-        cursor.execute(query)
-        failing_rows = cursor.fetchall()
-        if failing_rows:
-            print(f"  [FAIL] Invariant test '{test_name}' failed! Returned {len(failing_rows)} invalid rows.")
-            all_passed = False
-        else:
-            print(f"  [PASS] Singular invariant '{test_name}' passed (0 failing rows).")
+    for filename in sorted(os.listdir(singular_dir)):
+        if filename.endswith('.sql'):
+            file_path = os.path.join(singular_dir, filename)
+            with open(file_path, 'r', encoding='utf-8') as f:
+                query = f.read()
+            cursor.execute(query)
+            failing_rows = cursor.fetchall()
+            if failing_rows:
+                print(f"  [FAIL] Invariant test '{filename}' failed! Returned {len(failing_rows)} invalid rows.")
+                all_passed = False
+            else:
+                print(f"  [PASS] Singular invariant '{filename}' passed (0 failing rows).")
 
     conn.close()
     return all_passed
+
 
 def ensure_test_fixtures(conn):
     with conn.cursor() as cur:

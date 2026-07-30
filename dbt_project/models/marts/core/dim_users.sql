@@ -15,10 +15,10 @@ with user_snapshots as (
 )
 
 select
-    abs(hashtext(user_sk_str))::bigint as user_sk,
+    ('0x' || substring(md5(user_sk_str), 1, 15))::bit(60)::bigint as user_sk,
     user_id,
-    abs(hashtext(university_id::text))::bigint as university_sk,
-    case when course_id is not null then abs(hashtext(course_id::text))::bigint else null end as course_sk,
+    ('0x' || substring(md5(university_id::text), 1, 15))::bit(60)::bigint as university_sk,
+    case when course_id is not null then ('0x' || substring(md5(course_id::text), 1, 15))::bit(60)::bigint else null end as course_sk,
     role,
     registration_date,
     status,

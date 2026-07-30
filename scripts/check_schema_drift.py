@@ -41,23 +41,26 @@ def main():
     contract_required = set(envelope_schema.get('required', []))
     contract_properties = set(envelope_schema.get('properties', {}).keys())
 
-    # 2. Parse Catalog YML Events & Categories
+    # 2. Parse Catalog YML Events & Categories using PyYAML
+    import yaml
     with open(EVENTS_CATALOG_PATH, 'r', encoding='utf-8') as f:
-        yml_text = f.read()
+        catalog_data = yaml.safe_load(f)
 
-    catalog_events = set(re.findall(r'-\s+event_name:\s*([a-z0-9_]+)', yml_text))
-    raw_categories = re.findall(r'category:\s*([^\n\r]+)', yml_text)
-    
+    catalog_events = set()
     catalog_categories = set()
-    for cat in raw_categories:
-        cat_clean = cat.strip().strip('"\'')
-        if 'Authentication' in cat_clean:
-            catalog_categories.add('Auth')
-        else:
-            catalog_categories.add(cat_clean)
+    for ev in catalog_data.get('events', []):
+        if 'event_name' in ev:
+            catalog_events.add(ev['event_name'])
+        if 'category' in ev:
+            cat_clean = str(ev['category']).strip().strip('"\'')
+            if 'Authentication' in cat_clean:
+                catalog_categories.add('Auth')
+            else:
+                catalog_categories.add(cat_clean)
 
     # Expected catalog targets
     expected_categories = {
+
         'Auth', 'Navigation', 'Search', 'Ratings', 'Downloads',
         'Uploads', 'Planning', 'Favorites', 'Notifications', 'Errors',
         'System', 'Admin'

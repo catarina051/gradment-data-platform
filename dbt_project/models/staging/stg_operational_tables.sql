@@ -1,4 +1,4 @@
--- Staging model typed over GradMent operational database tables (usuarios, curriculo_disciplinas, etc.)
+-- Staging model typed over GradMent operational database tables (usuarios, etc.)
 with stg_usuarios as (
     select
         id_usuario as user_id,
@@ -8,16 +8,6 @@ with stg_usuarios as (
         data_cadastro as registration_date,
         status
     from {{ source('operational_db', 'usuarios') }}
-),
-
-stg_disciplinas as (
-    select
-        id_disciplina as discipline_id,
-        codigo_disciplina,
-        nome_disciplina,
-        creditos,
-        ch_total
-    from {{ source('operational_db', 'curriculo_disciplinas') }}
 )
 
 select

@@ -16,7 +16,7 @@ with rating_events as (
 )
 
 select
-    abs(hashtext(rating_id))::bigint as rating_sk,
+    ('0x' || substring(md5(rating_id), 1, 15))::bit(60)::bigint as rating_sk,
     rating_id,
     date_sk,
     user_sk,

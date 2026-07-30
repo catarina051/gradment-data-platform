@@ -1,6 +1,11 @@
 {{ config(materialized='table') }}
 
-WITH daily_dau AS (
+WITH dim_users_current AS (
+    SELECT COUNT(*) AS total_current_users
+    FROM {{ ref('dim_users') }}
+    WHERE is_current = true
+),
+daily_dau AS (
     SELECT
         d.full_date AS activity_date,
         COUNT(DISTINCT a.user_sk) AS dau
@@ -58,10 +63,11 @@ SELECT
     COALESCE(s.avg_session_duration_seconds, 0) AS avg_session_duration_seconds,
     ROUND(s.total_sessions::NUMERIC / NULLIF(r.dau, 0), 2) AS sessions_per_user,
     ROUND(COALESCE(s.single_event_sessions, 0)::NUMERIC / NULLIF(s.total_sessions, 0), 4) AS bounce_rate,
-    ROUND(r.dau::NUMERIC / NULLIF((SELECT COUNT(*) FROM {{ ref('dim_users') }}), 0), 4) AS feature_adoption_rate,
-    ((SELECT COUNT(*) FROM {{ ref('dim_users') }}) - r.mau) AS dormant_users_count,
+    ROUND(r.dau::NUMERIC / NULLIF(u.total_current_users, 0), 4) AS feature_adoption_rate,
+    (u.total_current_users - r.mau) AS dormant_users_count,
     COALESCE(p.power_users_count, 0) AS power_users_count
 FROM rolling_window r
 LEFT JOIN {{ ref('dim_date') }} d ON r.activity_date = d.full_date
 LEFT JOIN session_stats s ON d.date_sk = s.session_start_date_sk
 CROSS JOIN power_users_agg p
+CROSS JOIN dim_users_current u

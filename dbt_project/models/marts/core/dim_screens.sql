@@ -9,7 +9,7 @@ with raw_screens as (
 )
 
 select
-    abs(hashtext(screen_name))::bigint as screen_sk,
+    ('0x' || substring(md5(screen_name), 1, 15))::bit(60)::bigint as screen_sk,
     screen_name,
     feature_key,
     route_path

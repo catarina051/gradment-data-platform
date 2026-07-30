@@ -1,0 +1,8 @@
+psycopg2-binary>=2.9.0
+pymysql>=1.1.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+jsonschema>=4.0.0
+matplotlib>=3.7.0
+dbt-core>=1.6.0
+dbt-postgres>=1.6.0

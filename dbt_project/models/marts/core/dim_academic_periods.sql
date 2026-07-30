@@ -6,7 +6,7 @@ with source_periods as (
 )
 
 select
-    abs(hashtext(academic_period))::bigint as period_sk,
+    ('0x' || substring(md5(academic_period), 1, 15))::bit(60)::bigint as period_sk,
     academic_period,
     year,
     semester

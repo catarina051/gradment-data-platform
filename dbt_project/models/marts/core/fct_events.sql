@@ -14,17 +14,31 @@ dim_screens as (
 
 dim_professors as (
     select * from {{ ref('dim_professors') }}
+),
+
+dim_periods as (
+    select * from {{ ref('dim_academic_periods') }}
 )
 
 select
-    abs(hashtext(e.raw_event_id))::bigint as event_sk,
+    ('0x' || substring(md5(e.raw_event_id), 1, 15))::bit(60)::bigint as event_sk,
     e.raw_event_id as event_id,
     e.event_date_sk,
     u.user_sk,
     s.screen_sk,
-    null::bigint as course_sk,
+    coalesce(
+        case when (e.payload_json->>'course_id') is not null 
+             then ('0x' || substring(md5((e.payload_json->>'course_id')::text), 1, 15))::bit(60)::bigint 
+        end,
+        u.course_sk
+    ) as course_sk,
     p.professor_sk,
-    null::bigint as period_sk,
+    coalesce(
+        case when (e.payload_json->>'ano_periodo') is not null 
+             then ('0x' || substring(md5(e.payload_json->>'ano_periodo'), 1, 15))::bit(60)::bigint 
+        end,
+        ('0x' || substring(md5('2026.1'), 1, 15))::bit(60)::bigint
+    ) as period_sk,
     e.session_id, -- Degenerate dimension (raw UUID, no FK to fct_sessions to avoid circular loading dependency)
     e.platform,   -- Degenerate dimension
     e.app_version, -- Degenerate dimension

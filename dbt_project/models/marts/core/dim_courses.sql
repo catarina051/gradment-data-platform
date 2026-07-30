@@ -1,15 +1,16 @@
 -- Core dimension model dim_courses
 with source_courses as (
     select
-        101 as discipline_id,
-        'MAT101' as codigo_disciplina,
-        'Cálculo I' as nome_disciplina,
-        4 as creditos,
-        60 as ch_total
+        discipline_id,
+        codigo_disciplina,
+        nome_disciplina,
+        creditos,
+        ch_total
+    from {{ ref('stg_curriculo_disciplinas') }}
 )
 
 select
-    abs(hashtext(discipline_id::text))::bigint as course_sk,
+    ('0x' || substring(md5(discipline_id::text), 1, 15))::bit(60)::bigint as course_sk,
     discipline_id,
     codigo_disciplina,
     nome_disciplina,

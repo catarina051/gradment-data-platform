@@ -8,7 +8,7 @@ with raw_professors as (
 )
 
 select
-    abs(hashtext(docente_name_clean))::bigint as professor_sk,
+    ('0x' || substring(md5(docente_name_clean), 1, 15))::bit(60)::bigint as professor_sk,
     docente_name_clean,
     original_docente_string,
     jsonb_build_array(original_docente_string) as raw_name_variations_json
